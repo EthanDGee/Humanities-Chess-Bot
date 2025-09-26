@@ -7,8 +7,17 @@ def convert_to_csv(file_path: str):
     print(file_path)
     pgn = open(file_path)
 
+    # create the header for the csv file
+    header = "white_elo,black_elo,blacks_move,"
+
+    for letter in "ABCDEFGH":
+        for num in range(1, 9):
+            header += f"{letter}{num},"
+
     csv_name = file_path.split(".")[0] + ".csv"
     with open(csv_name, mode="w") as csv:
+        csv.write(header)
+
         current_game = chess.pgn.read_game(pgn)
         while current_game is not None:
             elo = (current_game.headers["WhiteElo"], current_game.headers["BlackElo"])
