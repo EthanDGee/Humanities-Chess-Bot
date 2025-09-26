@@ -3,7 +3,7 @@ import chess.pgn
 import sys
 
 
-def convert_to_csv(file_path):
+def convert_to_csv(file_path: str):
     print(file_path)
     pgn = open(file_path)
 
@@ -12,15 +12,20 @@ def convert_to_csv(file_path):
         current_game = chess.pgn.read_game(pgn)
         while current_game is not None:
             print(current_game)
+            elo = (current_game.headers["WhiteElo"], current_game.headers["BlackElo"])
             board = current_game.board()
+            is_black = False
             for move in current_game.mainline_moves():
                 board.push(move)
-                row = convert_board_to_row(board, 1500, "")
+                row = convert_board_to_row(board, elo, is_black)
+
                 csv.write(row)
+                is_black = not is_black  # toggle every move
 
 
-def convert_board_to_row(board, elo, is_black) -> str:
-    pass
+def convert_board_to_row(board, elo: tuple, is_black: bool) -> str:
+    print(f"{elo} {int(is_black)} {board.fen} ")
+    return ""
 
 
 if __name__ == "__main__":
