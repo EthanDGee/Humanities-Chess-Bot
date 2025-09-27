@@ -4,6 +4,16 @@ import sys
 
 
 def convert_to_csv(file_path: str):
+    """
+    Converts a PGN chess file to a CSV file containing board states after each move.
+
+    Each row in the CSV contains the white and black ELO ratings, a flag indicating if the move was made by black,
+    and the board state encoded as integers for each square.
+
+    Args:
+        file_path (str): Path to the PGN file to be converted.
+    """
+
     print(file_path)
     pgn = open(file_path)
 
@@ -38,6 +48,20 @@ def convert_to_csv(file_path: str):
 
 
 def convert_board_to_row(fen: str, elo: tuple, is_black: bool) -> str:
+    """
+    Converts a FEN string and game metadata into a CSV row.
+
+    The board is encoded as a sequence of integers representing pieces and empty squares.
+    The row includes ELO ratings, a flag for black's move, and the board state.
+
+    Args:
+        fen (str): FEN string representing the board state.
+        elo (tuple): Tuple containing white and black ELO ratings.
+        is_black (bool): True if the move was made by black, False otherwise.
+
+    Returns:
+        str: A CSV-formatted string representing the board state and metadata.
+    """
     piece_map = {
         "P": 1,
         "N": 2,
