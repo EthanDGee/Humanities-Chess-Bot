@@ -9,3 +9,6 @@ __pycache__/
 .code/
 .vscode/
 .idea/
+
+lichess_db_standard_rated_2013-01.csv
+
