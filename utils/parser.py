@@ -32,7 +32,7 @@ def convert_to_csv(file_path: str):
         csv.write(f"{header}")
 
         current_game = chess.pgn.read_game(pgn)
-
+        
         while current_game is not None:
             # get game info
             elo = (current_game.headers["WhiteElo"], current_game.headers["BlackElo"])
@@ -85,8 +85,11 @@ def convert_board_to_row(fen: str, elo: tuple, is_black: bool, move: str) -> str
         "k": 12,
     }
 
+    # Split FEN string and only use the board position part (first part)
+    board_position = fen.split()[0]
+    
     board = []
-    for char in fen:  # skip line splits
+    for char in board_position:  # only process the board position part
         if char == "/":
             continue
         # digits indicate sequences of empty spaces so we simply make the next 'n' spaces 0
@@ -95,7 +98,7 @@ def convert_board_to_row(fen: str, elo: tuple, is_black: bool, move: str) -> str
         else:
             board.append(piece_map.get(char, 0))
 
-    return f"{','.join(elo)},{int(is_black)},{','.join([str(piece) for piece in board])}{move}\n"
+    return f"{','.join(elo)},{int(is_black)},{','.join([str(piece) for piece in board])},{move}\n"
 
 
 if __name__ == "__main__":
