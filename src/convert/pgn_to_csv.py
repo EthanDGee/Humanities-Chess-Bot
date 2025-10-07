@@ -13,13 +13,13 @@ class PGNToCSVConfig(BaseModel):
     destination_path: str
     verbose: bool = False
 
-    @field_validator("source_path")
+    @field_validator("source_path", mode="before")
     def validate_source_path(cls, v: str) -> str:
         if not os.path.exists(v):
             raise ValueError(f"Source file not found: {v}")
         return v
 
-    @field_validator("destination_path")
+    @field_validator("destination_path", mode="before")
     def validate_destination_path(cls, v: str) -> str:
         if not v.endswith(".csv"):
             raise ValueError("Destination path must end with .csv")
