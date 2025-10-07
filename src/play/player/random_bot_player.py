@@ -1,6 +1,8 @@
 import random
 import chess
-from src.player.player import Player
+
+from src.play.player.player import Player
+
 
 class RandomBotPlayer(Player):
     def get_move(self, board: chess.Board) -> chess.Move:

@@ -1,5 +1,7 @@
-from src.player.player import Player
 import chess
+
+from src.play.player.player import Player
+
 
 class HumanPlayer(Player):
     def __init__(self, name: str, color: bool):

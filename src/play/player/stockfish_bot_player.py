@@ -1,10 +1,32 @@
 import chess
 import chess.engine
-import os
 import shutil
 
-from src.player.player import Player
+from src.play.player.player import Player
 
+# ================================================================
+# StockfishPlayer
+# A chess bot that uses the Stockfish engine.
+# ================================================================
+
+# ----------------------------
+# Setup Instructions:
+# ----------------------------
+# 1. Install Stockfish:
+#    - On Linux (Debian/Ubuntu):
+#        sudo apt install stockfish
+#    - On macOS using Homebrew:
+#        brew install stockfish
+#    - On Windows:
+#        Download from https://stockfishchess.org/download/ and place the executable in a folder added to PATH.
+#
+# 2. Install Python dependencies:
+#    pip install chess
+#
+# 3. Integrate with your game framework:
+#    - Import StockfishPlayer and pass it to your game loop.
+#    - You can adjust `skill_level` (0–20) for difficulty.
+#    - You can adjust `time_limit` to control thinking time per move.
 
 class StockfishPlayer(Player):
     def __init__(self, name="Stockfish", color=True, skill_level=10, time_limit=0.5):
@@ -18,18 +40,21 @@ class StockfishPlayer(Player):
         self.time_limit = time_limit
         self.skill_level = skill_level
 
+        # Locate Stockfish binary
         self.engine_path = shutil.which("stockfish")
         if self.engine_path is None:
             raise FileNotFoundError(
-                "Stockfish binary not found in PATH. Try installing it with `sudo apt install stockfish`.")
+                "Stockfish binary not found in PATH. Try installing it with `sudo apt install stockfish`."
+            )
 
-        # Initialize Stockfish
+        # Initialize Stockfish engine
         self.engine = chess.engine.SimpleEngine.popen_uci(self.engine_path)
         self.engine.configure({"Skill Level": skill_level})
 
     def get_move(self, board: chess.Board):
+        # Only make a move if it's this player's turn
         if board.turn != self.color:
-            return None  # Not this bot's turn
+            return None
 
         try:
             result = self.engine.play(board, chess.engine.Limit(time=self.time_limit))
@@ -39,6 +64,7 @@ class StockfishPlayer(Player):
             return None
 
     def close(self):
+        # Safely terminate engine
         try:
             self.engine.quit()
         except Exception:
