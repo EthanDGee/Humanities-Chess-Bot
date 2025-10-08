@@ -13,16 +13,78 @@ class Database:
         # Columns exactly as in the provided selection
         self.CLASS_LABELS: List[str] = [
             # board squares
-            "A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8",
-            "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8",
-            "C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8",
-            "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8",
-            "E1", "E2", "E3", "E4", "E5", "E6", "E7", "E8",
-            "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8",
-            "G1", "G2", "G3", "G4", "G5", "G6", "G7", "G8",
-            "H1", "H2", "H3", "H4", "H5", "H6", "H7", "H8",
+            "A1",
+            "A2",
+            "A3",
+            "A4",
+            "A5",
+            "A6",
+            "A7",
+            "A8",
+            "B1",
+            "B2",
+            "B3",
+            "B4",
+            "B5",
+            "B6",
+            "B7",
+            "B8",
+            "C1",
+            "C2",
+            "C3",
+            "C4",
+            "C5",
+            "C6",
+            "C7",
+            "C8",
+            "D1",
+            "D2",
+            "D3",
+            "D4",
+            "D5",
+            "D6",
+            "D7",
+            "D8",
+            "E1",
+            "E2",
+            "E3",
+            "E4",
+            "E5",
+            "E6",
+            "E7",
+            "E8",
+            "F1",
+            "F2",
+            "F3",
+            "F4",
+            "F5",
+            "F6",
+            "F7",
+            "F8",
+            "G1",
+            "G2",
+            "G3",
+            "G4",
+            "G5",
+            "G6",
+            "G7",
+            "G8",
+            "H1",
+            "H2",
+            "H3",
+            "H4",
+            "H5",
+            "H6",
+            "H7",
+            "H8",
         ]
         self.TARGET_COLUMN: str = "selected_move"
+
+        self.ALL_HEADERS = []
+        self.ALL_HEADERS.extend(self.INTEGER_LABELS)
+        self.ALL_HEADERS.extend(self.BOOLEAN_LABELS)
+        self.ALL_HEADERS.extend(self.CLASS_LABELS)
+        self.ALL_HEADERS.append(self.TARGET_COLUMN)
 
         self._ensure_table_exist()
 
@@ -59,14 +121,31 @@ class Database:
             # add the various labels
             query += _append_columns(self.INTEGER_LABELS, "INTEGER")
             query += _append_columns(self.BOOLEAN_LABELS, "INTEGER")
-            query += _append_columns(self.CLASS_LABELS, "INTEGER")  # classes are stored as indexes
+            query += _append_columns(
+                self.CLASS_LABELS, "INTEGER"
+            )  # classes are stored as indexes
 
             # add the target class
             query += f"{self.TARGET_COLUMN} TEXT)"
             cur.execute(query)
             conn.commit()
 
-    def _save_state(self, state_data: List) -> None:
+    def _process_row(self, row: List):
+        """Process a single row, converting labels to integers in a much more condensed way"""
+        try:
+            # try and convert all but the target to an int which is a string
+            target = row[-1]
+            labels = [int(label) for label in row[:-1]]
+            labels.append(target)
+            return labels  # labels + target
+        except ValueError as e:
+            print(e)
+            print(
+                f"Row Processing Warning: Could not convert row to integers: {e}. Ignoring row."
+            )
+            return None
+
+    def _insert_state(self, state_data: List) -> None:
         """
         Saves the given state data to the database by formatting and inserting it
         into the 'state' SQL table. Converts all labels from the list into integers
@@ -89,7 +168,9 @@ class Database:
             try:
                 labels[i] = int(labels[i])
             except ValueError:
-                print(f"Warning: Could not convert label {i} - {labels[i]} to int. Ignoring state.")
+                print(
+                    f"Insert State Warning:{e} Could not convert label {i} - {labels[i]} to int. Ignoring state."
+                )
 
         # format for SQL insert statement
         processed_data = ""
@@ -105,7 +186,17 @@ class Database:
             cur.execute(f"INSERT INTO state VALUES ({processed_data})")
             conn.commit()
 
-    def import_csv(self, csv_path: str) -> None:
+    def _insert_batch(self, batch: List[List]) -> None:
+        # Create placeholders for the INSERT statement
+        num_columns = len(self.ALL_HEADERS)
+        placeholders = ", ".join(["?"] * num_columns)
+
+        with sqlite3.connect(self.db_name) as conn:
+            cur = conn.cursor()
+            cur.executemany(f"INSERT INTO state VALUES ({placeholders})", batch)
+            conn.commit()
+
+    def import_csv(self, csv_path: str, batch_size: int = 32) -> None:
         """
         Imports data from a CSV file by processing each line and saves it using
         the internal storage mechanism. The method reads the file line-by-line
@@ -124,10 +215,30 @@ class Database:
         with open(csv_path, "r") as file:
             file.readline()  # skip the header line
             line = file.readline()
+
+            processed_batch = []
+
             while line:
+                line = line.strip()  # remove new-line
                 data = line.split(",")
-                self._save_state(data)
+                # self._insert_state(data)
+                processed_row = self._process_row(data)
+                if processed_row is not None:
+                    processed_batch.append(self._process_row(data))
+                else:
+                    print("CSV Warning: Row could not be processed. Skipping.")
+
+                # if processed amount reaches batch_size insert and clear the cache
+                if len(processed_batch) == batch_size:
+                    print("Batch size reached, inserting batch...")
+                    self._insert_batch(processed_batch)
+                    processed_batch = []
+
                 line = file.readline()
+
+            # insert the remaining batch
+            if processed_batch:
+                self._insert_batch(processed_batch)
 
     def state_count(self) -> int:
         with sqlite3.connect(self.db_name) as conn:
