@@ -86,6 +86,10 @@ class Database:
         self.ALL_HEADERS.extend(self.CLASS_LABELS)
         self.ALL_HEADERS.append(self.TARGET_COLUMN)
 
+        # FILTERING INFO
+        self.MIN_ELO = 600
+        self.MAX_ELO = 1900
+
         self._ensure_table_exist()
 
     def _ensure_table_exist(self) -> None:
@@ -167,7 +171,7 @@ class Database:
         for i in range(len(labels)):
             try:
                 labels[i] = int(labels[i])
-            except ValueError:
+            except ValueError as e:
                 print(
                     f"Insert State Warning:{e} Could not convert label {i} - {labels[i]} to int. Ignoring state."
                 )
@@ -195,6 +199,10 @@ class Database:
             cur = conn.cursor()
             cur.executemany(f"INSERT INTO state VALUES ({placeholders})", batch)
             conn.commit()
+
+    @staticmethod
+    def _get_target_label(algebraic_notation_move: str):
+        pass
 
     def import_csv(self, csv_path: str, batch_size: int = 32) -> None:
         """
@@ -224,7 +232,17 @@ class Database:
                 # self._insert_state(data)
                 processed_row = self._process_row(data)
                 if processed_row is not None:
-                    processed_batch.append(self._process_row(data))
+                    # check if either elo is outside range
+                    white_elo = processed_row[0]
+                    black_elo = processed_row[1]
+
+                    if not (
+                        white_elo < self.MIN_ELO
+                        or white_elo > self.MAX_ELO
+                        or black_elo < self.MIN_ELO
+                        or black_elo > self.MAX_ELO
+                    ):
+                        processed_batch.append(self._process_row(data))
                 else:
                     print("CSV Warning: Row could not be processed. Skipping.")
 
