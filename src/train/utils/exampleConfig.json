@@ -1,0 +1,16 @@
+{
+  "hyperparameters": {
+    "learning_rate": 0,
+    "decayRate": 0,
+    "beta": 0,
+    "momentum": 0.9,
+    "num_epochs": 100,
+    "batch_size": 32,
+    "dropout_rate": 0.5,
+    "epsilon": 1e-8
+  },
+  "database_info": {
+    "num_indexes": 100000,
+    "desired_elo_range": [700, 1900]
+  }
+}
