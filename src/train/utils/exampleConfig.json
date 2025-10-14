@@ -1,12 +1,11 @@
 {
   "hyperparameters": {
-    "learning_rate": 0,
-    "decayRate": 0,
-    "beta": 0,
-    "momentum": 0.9,
+    "learning_rates": [],
+    "decayRates": [],
+    "betas": [],
+    "momentums": [],
     "num_epochs": 100,
-    "batch_size": 32,
-    "dropout_rate": 0.5,
+    "batch_size": 0,
     "epsilon": 1e-8
   },
   "database_info": {
