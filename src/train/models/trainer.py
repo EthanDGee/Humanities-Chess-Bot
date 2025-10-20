@@ -1,11 +1,33 @@
-from torch.utils.data import DataLoader
+import json
+from typing import List
+
 from torch.optim import Adam
-from dataloaders import Dataloader
+from torch.utils.data import Dataloader
+
+from data_loader import Data
 
 
 class Trainer:
-    def __init__(self, model_path):
-        self.dataloader = Dataloader()
+    def __init__(self, parameter_path: str):
+        with open(parameter_path) as file:
+            values = json.load(file)
+
+            hyperparameters = values["hyperparameters"]
+            database_info = values["database_info"]
+
+        # stable parameters
+        self.num_epochs: int = hyperparameters["num_epochs"]
+        self.batch_size: int = hyperparameters["batch_size"]
+        self.num_workers: int = hyperparameters["num_workers"]
+
+        # searchable parameters
+        self.learning_rates: List = hyperparameters["learning_rates"]
+        self.decay_rates: List = hyperparameters["decay_rates"]
+        self.betas: List = hyperparameters["betas"]
+        self.momementums: List = hyperparameters["momementums"]
+
+        # data loader
+        self.dataloader = Data()
 
     def train():
         # Define loss function and optimizer

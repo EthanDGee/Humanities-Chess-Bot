@@ -1,7 +1,7 @@
 from torch.utils.data import Dataset
 
 
-class Database(Dataset):
+class ChessDataSet(Dataset):
     def __init__(self, database, num_indexes):
         super(Dataset).__init__()
 
