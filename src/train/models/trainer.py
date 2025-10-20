@@ -2,6 +2,7 @@ import json
 from typing import List
 
 import torch
+from torch import nn
 from torch.optim import Adam
 from torch.utils.data import Dataloader
 
@@ -18,6 +19,7 @@ class Trainer:
 
         # Model
         self.model = model
+        self.criterion = nn.CrossEntropyLoss()
 
         # stable parameters
         self.num_epochs: int = hyperparameters["num_epochs"]
@@ -42,7 +44,6 @@ class Trainer:
 
     def train(self):
         # Define loss function and optimizer
-        criterion = nn.CrossEntropyLoss()
         optimizer = Adam(
             self.model.parameters(),
             lr=self.current_lr,
@@ -58,31 +59,35 @@ class Trainer:
             for batch_x, batch_y in self.train_dataloader:
                 optimizer.zero_grad()
                 outputs = self.model(batch_x)
-                loss = criterion(outputs, batch_y)
+                loss = self.criterion(outputs, batch_y)
                 loss.backward()
                 optimizer.step()
                 train_loss += loss.item()
 
-            # Validation
-            self.model.eval()
-            val_loss = 0.0
-            correct = 0
-            total = 0
-
-            with torch.no_grad():
-                for batch_x, batch_y in self.val_dataloader:
-                    outputs = self.model(batch_x)
-                    loss = criterion(outputs, batch_y)
-                    val_loss += loss.item()
-
-                    _, predicted = torch.max(outputs.data, 1)
-                    total += batch_y.size(0)
-                    correct += (predicted == batch_y).sum().item()
-
             avg_train_loss = train_loss / len(self.train_dataloader)
-            avg_val_loss = val_loss / len(self.val_dataloader)
-            val_accuracy = 100 * correct / total
-
+            avg_val_loss, val_accuracy = self.validation_loss()
             print(
-                f"Epoch [{epoch + 1}/{self.num_epochs}], Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}, Val Acc: {val_accuracy:.2f}%"
+                f"Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}, Val Acc: {val_accuracy:.2f}%"
             )
+
+    def validation_loss(self):
+        # Validation
+        self.model.eval()
+        val_loss = 0.0
+        correct = 0
+        total = 0
+
+        avg_val_loss = val_loss / len(self.val_dataloader)
+        val_accuracy = 100 * correct / total
+
+        with torch.no_grad():
+            for batch_x, batch_y in self.val_dataloader:
+                outputs = self.model(batch_x)
+                loss = self.criterion(outputs, batch_y)
+                val_loss += loss.item()
+
+                _, predicted = torch.max(outputs.data, 1)
+                total += batch_y.size(0)
+                correct += (predicted == batch_y).sum().item()
+
+        return avg_val_loss, val_accuracy
