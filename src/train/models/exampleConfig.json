@@ -1,15 +1,24 @@
 {
   "hyperparameters": {
     "learning_rates": [],
-    "decayRates": [],
+    "decay_rates": [],
     "betas": [],
     "momentums": [],
     "num_epochs": 100,
     "batch_size": 0,
-    "num_workers": 0,
+    "num_workers": 0
   },
   "database_info": {
+    "training_path": "",
+    "validation_path": "",
     "num_indexes": 100000,
-    "desired_elo_range": [700, 1900]
+    "desired_elo_range": [
+      700,
+      1900
+    ]
+  },
+  "checkpoints": {
+    "directory": "",
+    "auto_save_interval": 0
   }
 }
