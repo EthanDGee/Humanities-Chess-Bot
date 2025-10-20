@@ -50,6 +50,7 @@ class Trainer:
 
         # Model Checkpoints Path
         self.checkpoint_path = checkpoints["directory"]
+        self.auto_save_interval = checkpoints["auto_save_interval"]
 
     def train(self):
         # Define loss function and optimizer
@@ -60,6 +61,7 @@ class Trainer:
             betas=(self.current_beta, self.current_momentum),
         )
 
+        last_save_time = time.time()
         # Training loop
         for epoch in range(self.num_epochs):
             self.model.train()
@@ -72,6 +74,11 @@ class Trainer:
                 loss.backward()
                 optimizer.step()
                 train_loss += loss.item()
+
+                # check for auto save
+                if time.time() - last_save_time >= self.auto_save_interval:
+                    self.save_model()
+                    last_save_time = time.time()
 
             avg_train_loss = train_loss / len(self.train_dataloader)
             avg_val_loss, val_accuracy = self.validation_loss()
