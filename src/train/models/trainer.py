@@ -1,10 +1,12 @@
 import json
-from typing import List
 import random
+from typing import List
+import time
+
 import torch
+from dataloader import ChessDataSet
 from torch import nn
 from torch.optim import Adam
-from dataloader import ChessDataSet
 
 
 class Trainer:
@@ -14,6 +16,7 @@ class Trainer:
 
             hyperparameters = values["hyperparameters"]
             database_info = values["database_info"]
+            checkpoints = values["checkpoints"]
 
         # Model
         self.model = model
@@ -37,8 +40,16 @@ class Trainer:
         self.current_momentum: float = self.momementums[0]
 
         # data loader
-        self.train_dataloader = ChessDataSet()
-        self.val_dataloader = ChessDataSet()
+        total_instances = database_info["num_indexes"]
+        self.train_dataloader = ChessDataSet(
+            database_info["training_path"], total_instances
+        )
+        self.val_dataloader = ChessDataSet(
+            database_info["validation_path"], total_instances * 0.2
+        )
+
+        # Model Checkpoints Path
+        self.checkpoint_path = checkpoints["directory"]
 
     def train(self):
         # Define loss function and optimizer
@@ -65,7 +76,7 @@ class Trainer:
             avg_train_loss = train_loss / len(self.train_dataloader)
             avg_val_loss, val_accuracy = self.validation_loss()
             print(
-                f"Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}, Val Acc: {val_accuracy:.2f}%"
+                f"Epoch: {epoch}/{self.num_epochs} | Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}, Val Acc: {val_accuracy:.2f}%"
             )
 
     def validation_loss(self):
@@ -106,8 +117,8 @@ class Trainer:
                 f"Testing with LR: {self.current_lr}, Decay: {self.current_decay_rate}, Beta: {self.current_beta}, Momentum: {self.current_momentum}"
             )
             self.train()
-            avg_val_loss, val_accuracy = self.validation_loss()
-
+            self.save_model()
+            avg_val_loss, _ = self.validation_loss()
             if avg_val_loss < best_val_loss:
                 best_val_loss = avg_val_loss
                 best_hyperparameters = {
@@ -123,3 +134,8 @@ class Trainer:
         print(
             f"Best Hyperparameters: {best_hyperparameters} with Val Loss: {best_val_loss:.4f}"
         )
+
+    def save_model(self):
+        timestamp = time.strftime("%Y%m%d-%H%M%S")
+        model_name = f"model_lr{self.current_lr}_decay{self.current_decay_rate}_beta{self.current_beta}_momentum{self.current_momentum}_{timestamp}.pth"
+        torch.save(self.model.state_dict(), self.checkpoint_path + model_name)
