@@ -1,11 +1,9 @@
 import json
 from typing import List
-
+import random
 import torch
 from torch import nn
 from torch.optim import Adam
-from torch.utils.data import Dataloader
-
 from dataloader import ChessDataSet
 
 
@@ -91,3 +89,37 @@ class Trainer:
                 correct += (predicted == batch_y).sum().item()
 
         return avg_val_loss, val_accuracy
+
+    def randomize_hyperparameters(self):
+        self.current_lr = random.choice(self.learning_rates)
+        self.current_decay_rate = random.choice(self.decay_rates)
+        self.current_beta = random.choice(self.betas)
+        self.current_momentum = random.choice(self.momementums)
+
+    def random_search(self, iterations: int):
+        best_val_loss = float("inf")
+        best_hyperparameters = {}
+
+        for _ in range(iterations):
+            self.randomize_hyperparameters()
+            print(
+                f"Testing with LR: {self.current_lr}, Decay: {self.current_decay_rate}, Beta: {self.current_beta}, Momentum: {self.current_momentum}"
+            )
+            self.train()
+            avg_val_loss, val_accuracy = self.validation_loss()
+
+            if avg_val_loss < best_val_loss:
+                best_val_loss = avg_val_loss
+                best_hyperparameters = {
+                    "learning_rate": self.current_lr,
+                    "decay_rate": self.current_decay_rate,
+                    "beta": self.current_beta,
+                    "momentum": self.current_momentum,
+                }
+                print(
+                    f"New best hyperparameters found: {best_hyperparameters} with Val Loss: {best_val_loss:.4f}"
+                )
+
+        print(
+            f"Best Hyperparameters: {best_hyperparameters} with Val Loss: {best_val_loss:.4f}"
+        )
