@@ -44,8 +44,19 @@ class Trainer:
         self.val_dataloader = ChessDataSet(database_info["validation_path"], total_instances * 0.2)
 
         # Model Checkpoints Path
-        self.checkpoint_path = checkpoints["directory"]
+        self.save_directory = checkpoints["directory"]
+        self.auto_save_path = self.save_directory + "/check_points/"
         self.auto_save_interval = checkpoints["auto_save_interval"]
+        self.final_save = self.save_directory + "/trained_models/"
+        self.model_name = ""
+
+    def _update_model_name(self):
+        updated_name = f"del_lr{self.current_lr}"
+        updated_name += f"_decay{self.current_decay_rate}"
+        updated_name += f"_beta{self.current_beta}"
+        updated_name += f"_momentum{self.current_momentum}"
+
+        self.model_name = updated_name
 
     def train(self):
         # Define loss function and optimizer
@@ -135,7 +146,10 @@ class Trainer:
 
         print(f"Best Hyperparameters: {best_hyperparameters} with Val Loss: {best_val_loss:.4f}")
 
-    def save_model(self):
+    def save_model(self, auto_save: bool = True):
+        if auto_save:
+            save_directory = self.auto_save_path + self.model_name
+        else:
+            save_directory = self.final_save + self.model_name
         timestamp = time.strftime("%Y%m%d-%H%M%S")
-        model_name = f"model_lr{self.current_lr}_decay{self.current_decay_rate}_beta{self.current_beta}_momentum{self.current_momentum}_{timestamp}.pth"
-        torch.save(self.model.state_dict(), self.checkpoint_path + model_name)
+        torch.save(self.model.state_dict(), f"{save_directory}/{timestamp}.pth")
