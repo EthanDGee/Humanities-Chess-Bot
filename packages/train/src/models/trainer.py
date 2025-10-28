@@ -87,7 +87,6 @@ class Trainer:
         # Training loop
         for epoch in range(self.num_epochs):
             self.model.train()
-            train_loss = 0.0
 
             for batch_x, batch_y in self.train_dataloader:
                 optimizer.zero_grad()
@@ -95,17 +94,16 @@ class Trainer:
                 loss = self.criterion(outputs, batch_y)
                 loss.backward()
                 optimizer.step()
-                train_loss += loss.item()
 
                 # check for auto save
                 if time.time() - last_save_time >= self.auto_save_interval:
                     self._save_model()
                     last_save_time = time.time()
 
-            avg_train_loss = train_loss / len(self.train_dataloader)
+            avg_train_loss, train_accuracy = self._dataset_loss(self.train_dataloader)
             avg_val_loss, val_accuracy = self._dataset_loss(self.val_dataloader)
             print(
-                f"Epoch: {epoch}/{self.num_epochs} | Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}, Val Acc: {val_accuracy:.2f}%"
+                f"Epoch: {epoch}/{self.num_epochs} | Train Loss: {avg_train_loss:.4f}, Train Acc: {train_accuracy}, Val Loss: {avg_val_loss:.4f}, Val Acc: {val_accuracy:.2f}%"
             )
 
     def _dataset_loss(self, dataloader):
