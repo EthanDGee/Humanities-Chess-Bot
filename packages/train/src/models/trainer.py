@@ -106,6 +106,8 @@ class Trainer:
                 f"Epoch: {epoch}/{self.num_epochs} | Train Loss: {avg_train_loss:.4f}, Train Acc: {train_accuracy}, Val Loss: {avg_val_loss:.4f}, Val Acc: {val_accuracy:.2f}%"
             )
 
+        self._save_model(auto_save=False)
+
     def _dataset_loss(self, dataloader):
         """
         Computes the loss and accuracy of the model for a given dataloader.
@@ -150,6 +152,8 @@ class Trainer:
         """
         self.current_lr = random.choice(self.learning_rates)
         self.current_decay_rate = random.choice(self.decay_rates)
+        #
+        #
         self.current_beta = random.choice(self.betas)
         self.current_momentum = random.choice(self.momementums)
 
@@ -215,20 +219,34 @@ class Trainer:
         torch.save(self.model.state_dict(), f"{save_directory}/{timestamp}.pth")
 
         # calculate the accuracy and loss for the model
+        train_loss, train_accuracy = self._dataset_loss(self.train_dataloader)
+        val_loss, val_accuracy = self._dataset_loss(self.val_dataloader)
+
+        print(
+            f"Train Loss: {train_loss:.4f}, Train Acc: {train_accuracy}, Val Loss: {val_loss:.4f}, Val Acc: {val_accuracy:.2f}%"
+        )
 
         # save model performance metrics to csv
+        self._update_saves_csv(timestamp, train_loss, train_accuracy, val_loss, val_accuracy)
 
-    def _update_csv(self, version_name: str):
-        csv_path = self.final_save + "training.csv"
+    def _update_saves_csv(
+        self,
+        version_name: str,
+        train_loss: float,
+        train_accuracy: float,
+        val_loss: float,
+        val_accuracy: float,
+    ):
+        csv_path = self.final_save + "saves.csv"
 
         if not os.path.exists(csv_path):
-            header = "version_name,learning_rate,decay_rate,beta,momentum\n"
+            header = "version_name,learning_rate,decay_rate,beta,momentum,train_loss,train_accuracy,val_loss,val_accuracy\n"
             with open(csv_path, "w") as file:
                 file.write(header)
 
         with open(csv_path, "a") as file:
             file.write(
-                f"{version_name},{self.current_lr},{self.current_decay_rate},{self.current_beta},{self.current_momentum}\n"
+                f"{version_name},{self.current_lr},{self.current_decay_rate},{self.current_beta},{self.current_momentum},{train_loss},{train_accuracy},{val_loss},{val_accuracy}\n"
             )
 
         print(f"Wrote {version_name} info to {csv_path}")
