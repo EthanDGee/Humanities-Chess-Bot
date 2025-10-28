@@ -51,6 +51,13 @@ class Trainer:
         self.model_name = ""
 
     def _update_model_name(self):
+        """
+        Updates the model name to be a description of the current learning rate, decay rate,
+        beta, and momentum values.
+
+        Returns:
+            None
+        """
         updated_name = f"del_lr{self.current_lr}"
         updated_name += f"_decay{self.current_decay_rate}"
         updated_name += f"_beta{self.current_beta}"
@@ -59,6 +66,14 @@ class Trainer:
         self.model_name = updated_name
 
     def train(self):
+        """
+        Trains the model using the current hyper parameters saving the model periodically
+        to a check point dirctory based on self.auto_save_interval as well as training
+        information before saving the final model
+
+        Returns:
+            None
+        """
         # Define loss function and optimizer
         optimizer = Adam(
             self.model.parameters(),
@@ -83,16 +98,24 @@ class Trainer:
 
                 # check for auto save
                 if time.time() - last_save_time >= self.auto_save_interval:
-                    self.save_model()
+                    self._save_model()
                     last_save_time = time.time()
 
             avg_train_loss = train_loss / len(self.train_dataloader)
-            avg_val_loss, val_accuracy = self.validation_loss()
+            avg_val_loss, val_accuracy = self._validation_loss()
             print(
                 f"Epoch: {epoch}/{self.num_epochs} | Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}, Val Acc: {val_accuracy:.2f}%"
             )
 
-    def validation_loss(self):
+    def _validation_loss(self):
+        """
+        Computes the validation loss and accuracy for the model.
+
+        Returns:
+            tuple: A tuple containing two elements:
+                - avg_val_loss (float): the average validation loss
+                - val_accuracy (float): the percentage of correct predictions
+        """
         # Validation
         self.model.eval()
         val_loss = 0.0
@@ -115,12 +138,33 @@ class Trainer:
         return avg_val_loss, val_accuracy
 
     def randomize_hyperparameters(self):
+        """
+        Randomizes and assigns hyperparameter values from the lists of possible values.
+
+        This method selects random values for learning rate, decay rate, beta,
+        and momentum from their respective lists and assigns them to the object's
+        instance variables.
+
+        Returns:
+            None
+        """
         self.current_lr = random.choice(self.learning_rates)
         self.current_decay_rate = random.choice(self.decay_rates)
         self.current_beta = random.choice(self.betas)
         self.current_momentum = random.choice(self.momementums)
 
     def random_search(self, iterations: int):
+        """
+        Conducts a random search for hyperparameter optimization by iteratively testing
+        random configurations, evaluating their performance, and updating the best set
+        of hyperparameters based on validation loss.
+
+        Args:
+            iterations (int): The number of random configurations to search over
+
+        Returns:
+            None
+        """
         best_val_loss = float("inf")
         best_hyperparameters = {}
 
@@ -130,8 +174,8 @@ class Trainer:
                 f"Testing with LR: {self.current_lr}, Decay: {self.current_decay_rate}, Beta: {self.current_beta}, Momentum: {self.current_momentum}"
             )
             self.train()
-            self.save_model()
-            avg_val_loss, _ = self.validation_loss()
+            self._save_model()
+            avg_val_loss, _ = self._validation_loss()
             if avg_val_loss < best_val_loss:
                 best_val_loss = avg_val_loss
                 best_hyperparameters = {
@@ -146,7 +190,21 @@ class Trainer:
 
         print(f"Best Hyperparameters: {best_hyperparameters} with Val Loss: {best_val_loss:.4f}")
 
-    def save_model(self, auto_save: bool = True):
+    def _save_model(self, auto_save: bool = True):
+        """
+        Saves the model state to a file in the appropriate directory.
+
+        This method saves the state of the model to either the check_points
+        directory for the model or the final output directoryd depending on
+        whether the auto-save option is enabled or not.
+
+        Args:
+            auto_save (bool): Indicates whether to save the model in the auto-save
+                directory or the final save directory. Defaults to True.
+
+        Returns:
+            train_dataloader
+        """
         if auto_save:
             save_directory = self.auto_save_path + self.model_name
         else:
