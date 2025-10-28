@@ -103,40 +103,41 @@ class Trainer:
                     last_save_time = time.time()
 
             avg_train_loss = train_loss / len(self.train_dataloader)
-            avg_val_loss, val_accuracy = self._validation_loss()
+            avg_val_loss, val_accuracy = self._dataset_loss(self.val_dataloader)
             print(
                 f"Epoch: {epoch}/{self.num_epochs} | Train Loss: {avg_train_loss:.4f}, Val Loss: {avg_val_loss:.4f}, Val Acc: {val_accuracy:.2f}%"
             )
 
-    def _validation_loss(self):
+    def _dataset_loss(self, dataloader):
         """
-        Computes the validation loss and accuracy for the model.
+        Computes the loss and accuracy of the model for a given dataloader.
 
         Returns:
             tuple: A tuple containing two elements:
                 - avg_val_loss (float): the average validation loss
                 - val_accuracy (float): the percentage of correct predictions
         """
-        # Validation
-        self.model.eval()
-        val_loss = 0.0
+
+        total_loss = 0.0
         correct = 0
-        total = 0
+        total_loss = 0
 
-        avg_val_loss = val_loss / len(self.val_dataloader)
-        val_accuracy = 100 * correct / total
-
+        self.model.eval()
         with torch.no_grad():
-            for batch_x, batch_y in self.val_dataloader:
+            for batch_x, batch_y in dataloader:
                 outputs = self.model(batch_x)
                 loss = self.criterion(outputs, batch_y)
-                val_loss += loss.item()
+                total_loss += loss.item()
 
                 _, predicted = torch.max(outputs.data, 1)
-                total += batch_y.size(0)
                 correct += (predicted == batch_y).sum().item()
 
-        return avg_val_loss, val_accuracy
+        avg_loss = total_loss / len(dataloader)
+        accuracy = 100 * correct / len(dataloader)
+
+        self.model.train()
+
+        return avg_loss, accuracy
 
     def randomize_hyperparameters(self):
         """
@@ -176,7 +177,7 @@ class Trainer:
             )
             self.train()
             self._save_model()
-            avg_val_loss, _ = self._validation_loss()
+            avg_val_loss, _ = self._dataset_loss(self.val_dataloader)
             if avg_val_loss < best_val_loss:
                 best_val_loss = avg_val_loss
                 best_hyperparameters = {
