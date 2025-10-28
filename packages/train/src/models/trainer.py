@@ -1,4 +1,5 @@
 import json
+import os
 import random
 import time
 
@@ -205,9 +206,30 @@ class Trainer:
         Returns:
             train_dataloader
         """
+
+        # save the model
         if auto_save:
             save_directory = self.auto_save_path + self.model_name
         else:
             save_directory = self.final_save + self.model_name
         timestamp = time.strftime("%Y%m%d-%H%M%S")
         torch.save(self.model.state_dict(), f"{save_directory}/{timestamp}.pth")
+
+        # calculate the accuracy and loss for the model
+
+        # save model performance metrics to csv
+
+    def _update_csv(self, version_name: str):
+        csv_path = self.final_save + "training.csv"
+
+        if not os.path.exists(csv_path):
+            header = "version_name,learning_rate,decay_rate,beta,momentum\n"
+            with open(csv_path, "w") as file:
+                file.write(header)
+
+        with open(csv_path, "a") as file:
+            file.write(
+                f"{version_name},{self.current_lr},{self.current_decay_rate},{self.current_beta},{self.current_momentum}\n"
+            )
+
+        print(f"Wrote {version_name} info to {csv_path}")
