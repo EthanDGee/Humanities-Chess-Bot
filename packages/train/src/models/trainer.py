@@ -213,7 +213,30 @@ class Trainer:
         timestamp = time.strftime("%Y%m%d-%H%M%S")
         torch.save(self.model.state_dict(), f"{save_directory}/{timestamp}.pth")
 
-        # calculate the accuracy and loss for the model
+        # save model performance metrics to csv
+        self._update_saves_csv(timestamp)
+
+    def _update_saves_csv(self, timestamp: str):
+        """
+        Updates a CSV file with training and validation metrics for a model.
+
+        This method writes performance metrics, including training loss, training
+        accuracy, validation loss, and validation accuracy, along with hyperparameters
+        and the timestamp to a CSV file. If the file does not exist, it creates the
+        file and writes the appropriate headers.
+
+        Parameters:
+            timestamp (str): A timestamp string representing the version of the save.
+
+        Raises:
+            FileNotFoundError: If the path to the save directory does not exist or cannot
+            be created.
+
+        Return:
+              None
+        """
+        csv_path = self.final_save + self.model_name + "saves.csv"
+
         train_loss, train_accuracy = self._dataset_loss(self.train_dataloader)
         val_loss, val_accuracy = self._dataset_loss(self.val_dataloader)
 
@@ -221,16 +244,7 @@ class Trainer:
             f"Train Loss: {train_loss:.4f}, Train Acc: {train_accuracy}, Val Loss: {val_loss:.4f}, Val Acc: {val_accuracy:.2f}%"
         )
 
-        # save model performance metrics to csv
-        self._update_saves_csv(timestamp)
-
-    def _update_saves_csv(self, version_name: str):
-        csv_path = self.final_save + self.model_name + "saves.csv"
-
-        train_loss, train_accuracy = self._dataset_loss(self.train_dataloader)
-        val_loss, val_accuracy = self._dataset_loss(self.val_dataloader)
-
-        # check if csv exxists and if not create it and the associated headers
+        # check if csv exists and if not create it and the associated headers
         if not os.path.exists(csv_path):
             header = "version_name,learning_rate,decay_rate,beta,momentum,train_loss,train_accuracy,val_loss,val_accuracy\n"
             with open(csv_path, "w") as file:
@@ -238,12 +252,28 @@ class Trainer:
 
         with open(csv_path, "a") as file:
             file.write(
-                f"{version_name},{self.current_lr},{self.current_decay_rate},{self.current_beta},{self.current_momentum},{train_loss},{train_accuracy},{val_loss},{val_accuracy}\n"
+                f"{timestamp},{self.current_lr},{self.current_decay_rate},{self.current_beta},{self.current_momentum},{train_loss},{train_accuracy},{val_loss},{val_accuracy}\n"
             )
 
-        print(f"Wrote {version_name} info to {csv_path}")
+        print(f"Wrote {timestamp} info to {csv_path}")
 
     def _update_epoch_csv(self, epoch: int):
+        """
+        Updates the epoch data in a CSV file with the training and validation statistics.
+
+        This method computes the training and validation loss and accuracy for the current
+        epoch, records them, and appends the data into a CSV file. If the CSV file does not
+        exist, it is created along with the appropriate headers.
+
+        If the CSV file exists, the function appends the computed epoch details to it. The method
+        also prints a summary of the epoch's performance statistics.
+
+        Parameters:
+            epoch (int): The current epoch index being processed.
+
+        Returns:
+            None
+        """
         csv_path = self.final_save + self.model_name + "epochs.csv"
 
         train_loss, train_accuracy = self._dataset_loss(self.train_dataloader)
@@ -253,7 +283,7 @@ class Trainer:
             f"Epoch: {epoch}/{self.num_epochs} | Train Loss: {train_loss:.4f}, Train Acc: {train_accuracy}, Val Loss: {val_loss:.4f}, Val Acc: {val_accuracy:.2f}%"
         )
 
-        # check if csv exxists and if not create it and the associated headers
+        # check if csv exists and if not create it and the associated headers
         if not os.path.exists(csv_path):
             header = "epoch,learning_rate,decay_rate,beta,momentum,train_loss,train_accuracy,val_loss,val_accuracy\n"
             with open(csv_path, "w") as file:
