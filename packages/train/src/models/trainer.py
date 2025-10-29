@@ -100,12 +100,7 @@ class Trainer:
                     self._save_model()
                     last_save_time = time.time()
 
-            avg_train_loss, train_accuracy = self._dataset_loss(self.train_dataloader)
-            avg_val_loss, val_accuracy = self._dataset_loss(self.val_dataloader)
-            print(
-                f"Epoch: {epoch}/{self.num_epochs} | Train Loss: {avg_train_loss:.4f}, Train Acc: {train_accuracy}, Val Loss: {avg_val_loss:.4f}, Val Acc: {val_accuracy:.2f}%"
-            )
-
+            self._update_epoch_csv(epoch)
         self._save_model(auto_save=False)
 
     def _dataset_loss(self, dataloader):
@@ -227,18 +222,15 @@ class Trainer:
         )
 
         # save model performance metrics to csv
-        self._update_saves_csv(timestamp, train_loss, train_accuracy, val_loss, val_accuracy)
+        self._update_saves_csv(timestamp)
 
-    def _update_saves_csv(
-        self,
-        version_name: str,
-        train_loss: float,
-        train_accuracy: float,
-        val_loss: float,
-        val_accuracy: float,
-    ):
-        csv_path = self.final_save + "saves.csv"
+    def _update_saves_csv(self, version_name: str):
+        csv_path = self.final_save + self.model_name + "saves.csv"
 
+        train_loss, train_accuracy = self._dataset_loss(self.train_dataloader)
+        val_loss, val_accuracy = self._dataset_loss(self.val_dataloader)
+
+        # check if csv exxists and if not create it and the associated headers
         if not os.path.exists(csv_path):
             header = "version_name,learning_rate,decay_rate,beta,momentum,train_loss,train_accuracy,val_loss,val_accuracy\n"
             with open(csv_path, "w") as file:
@@ -250,3 +242,26 @@ class Trainer:
             )
 
         print(f"Wrote {version_name} info to {csv_path}")
+
+    def _update_epoch_csv(self, epoch: int):
+        csv_path = self.final_save + self.model_name + "epochs.csv"
+
+        train_loss, train_accuracy = self._dataset_loss(self.train_dataloader)
+        val_loss, val_accuracy = self._dataset_loss(self.val_dataloader)
+
+        print(
+            f"Epoch: {epoch}/{self.num_epochs} | Train Loss: {train_loss:.4f}, Train Acc: {train_accuracy}, Val Loss: {val_loss:.4f}, Val Acc: {val_accuracy:.2f}%"
+        )
+
+        # check if csv exxists and if not create it and the associated headers
+        if not os.path.exists(csv_path):
+            header = "epoch,learning_rate,decay_rate,beta,momentum,train_loss,train_accuracy,val_loss,val_accuracy\n"
+            with open(csv_path, "w") as file:
+                file.write(header)
+
+        with open(csv_path, "a") as file:
+            file.write(
+                f"{epoch},{self.current_lr},{self.current_decay_rate},{self.current_beta},{self.current_momentum},{train_loss},{train_accuracy},{val_loss},{val_accuracy}\n"
+            )
+
+        print(f"Wrote {epoch} info to {csv_path}")
