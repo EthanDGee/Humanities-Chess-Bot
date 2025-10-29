@@ -10,6 +10,7 @@ import torch
 from torch.utils.data import Dataset
 
 from packages.train.src.constants import DB_FILE
+from packages.train.src.dataset.repositories.game_snapshots import count_snapshots
 
 
 class GameSnapshotsDataset(Dataset):
@@ -56,11 +57,21 @@ class GameSnapshotsDataset(Dataset):
 
     def __init__(
         self,
+        start_index: int,
+        num_indexes: int,
         db_path: str | Path | None = None,
         elo_filter: tuple[int, int] | None = None,
         result_filter: list[str] | None = None,
         limit: int | None = None,
     ):
+        # check if num indexes is possible with size of current dataset if not throw an error
+        if count_snapshots() < start_index + num_indexes:
+            raise ValueError(
+                "num_indexes is larger than the size of the database\nIncrease the size of the database through the config file or decrease num_indexes"
+            )
+        self.start_index = start_index
+        self.num_indexes = num_indexes
+
         self.db_path = str(db_path) if db_path else DB_FILE
         self.data = self._load_data(elo_filter, result_filter, limit)
 
@@ -247,7 +258,7 @@ class GameSnapshotsDataset(Dataset):
 
     def __len__(self) -> int:
         """Return the number of samples in the dataset."""
-        return len(self.data)
+        return self.num_indexes
 
     def __getitem__(self, idx: int) -> dict[str, Any]:
         """Get a single sample from the dataset.
@@ -277,7 +288,7 @@ class GameSnapshotsDataset(Dataset):
 if __name__ == "__main__":
     # Example 1: Basic dataset
     print("\n1. Creating basic dataset...")
-    dataset = GameSnapshotsDataset(limit=100)
+    dataset = GameSnapshotsDataset(start_index=0, num_indexes=100)
     print(f"   Dataset size: {len(dataset)} positions")
 
     if len(dataset) > 0:
@@ -299,7 +310,7 @@ if __name__ == "__main__":
 
     # Example 2: Filtered dataset (high-rated games only)
     print("\n2. Creating filtered dataset (ELO 1000-2000)...")
-    dataset_filtered = GameSnapshotsDataset(elo_filter=(1000, 2000), limit=50)
+    dataset_filtered = GameSnapshotsDataset(start_index=0, num_indexes=50, elo_filter=(1000, 2000))
     print(f"   Filtered dataset size: {len(dataset_filtered)} positions")
 
     # Example 3: Use with PyTorch DataLoader
