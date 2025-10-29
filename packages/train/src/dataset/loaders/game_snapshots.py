@@ -213,10 +213,8 @@ class GameSnapshotsDataset(Dataset):
         """
         return torch.tensor([white_elo / 3000.0, black_elo / 3000.0], dtype=torch.float32)
 
-    def _encode_move(
-        self, fen: str, move_san: str
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Encode move as one-hot vectors for source, target, and promotion.
+    def _encode_move(self, fen: str, move_san: str) -> tuple[torch.Tensor, torch.Tensor]:
+        """Encode move as one-hot vectors for move (combined start and end destination) and promotion.
 
         Args:
             fen: FEN string of the position before the move
@@ -224,8 +222,7 @@ class GameSnapshotsDataset(Dataset):
 
         Returns:
             Tuple of (from_square, to_square, promotion) tensors
-            - from_square: (64,) one-hot tensor
-            - to_square: (64,) one-hot tensor
+            - move: (4096,) one-hot tensor that stores both start and end positions
             - promotion: (5,) one-hot tensor for [none, N, B, R, Q]
         """
         try:
@@ -233,28 +230,38 @@ class GameSnapshotsDataset(Dataset):
             # Parse SAN move to get UCI move
             move = board.parse_san(move_san)
 
-            # Encode from square (0-63)
-            from_square = torch.zeros(64, dtype=torch.float32)
-            from_square[move.from_square] = 1.0
+            # get the rows and columsn for the start and end positions
+            start_col = ord(move.from_square.square_name[0]) - 97
+            start_row = int(move.from_square.square_name[1])
 
-            # Encode to square (0-63)
-            to_square = torch.zeros(64, dtype=torch.float32)
-            to_square[move.to_square] = 1.0
+            end_col = (
+                ord(move.to_square.square_name[-2]) - 97
+            )  # we negative index to get the end notation
+            end_row = move.to_square.square_name[-1]
+
+            # encode the values by using base 8 numering giving each id a digit place (stored in base 10)
+            encoding_index = start_col
+            encoding_index += 8 * start_row
+            encoding_index += 8**2 * end_col
+            encoding_index += 8**3 * end_row
+
+            # Encode 4 digit base 8 index (0-4097)
+            move = torch.zeros(4096, dtype=torch.float32)
+            move[encoding_index] = 1.0
 
             # Encode promotion piece
             promotion = torch.zeros(5, dtype=torch.float32)
             promotion_idx = self.PROMOTION_PIECES.get(move.promotion, 0)
             promotion[promotion_idx] = 1.0
 
-            return from_square, to_square, promotion
+            return move, promotion
 
         except (ValueError, AssertionError):
             # If move parsing fails, return zeros
-            from_square = torch.zeros(64, dtype=torch.float32)
-            to_square = torch.zeros(64, dtype=torch.float32)
+            move = torch.zeros(4096, dtype=torch.float32)
             promotion = torch.zeros(5, dtype=torch.float32)
             promotion[0] = 1.0  # No promotion
-            return from_square, to_square, promotion
+            return move, promotion
 
     def __len__(self) -> int:
         """Return the number of samples in the dataset."""
@@ -269,18 +276,33 @@ class GameSnapshotsDataset(Dataset):
         Returns:
             Dictionary containing encoded tensors ready for training
         """
+
+        # # retrieve index from the database slice
+        # with sqlite3.connect(self.db_path) as conn:
+        #     query = "SELECT fen, move, white_elo, black_elo, result, turn FROM game_snapshots WHERE id=?"
+        #     result = conn.cursor.execute(query, self.start_index + idx)
+        #
+        # # convert to tensor
+
         sample = self.data[idx]
 
         # Encode all features
-        from_sq, to_sq, promo = self._encode_move(sample["fen"], sample["move"])
+
+        # _encode_move
+
+        move, promo = self._encode_move(sample["fen"], sample["move"])
+
+        # board
+
+        # elos
+
+        # flatten and combine to 1d tensor
 
         return {
             "board": self._fen_to_tensor(sample["fen"]),
-            "turn": self._encode_turn(sample["turn"]),
             "elo": self._normalize_elo(sample["white_elo"], sample["black_elo"]),
             "result": self._encode_result(sample["result"], sample["turn"]),
-            "move_from": from_sq,
-            "move_to": to_sq,
+            "move": move,
             "promotion": promo,
         }
 
