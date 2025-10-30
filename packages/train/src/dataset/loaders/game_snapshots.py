@@ -2,7 +2,6 @@
 
 import sqlite3
 from pathlib import Path
-from typing import Any
 
 import chess
 import numpy as np
@@ -137,7 +136,8 @@ class GameSnapshotsDataset(Dataset):
     def _fen_to_tensor(self, fen: str) -> torch.Tensor:
         """Convert FEN string to tensor representation.
 
-        Creates a 8x8x12 tensor where each channel represents a piece type/color:
+        Creates a 1d flattened tensor of a chess board where each tile represents
+        a piece type/color:
         - Channels 0-5: White pieces (pawn, knight, bishop, rook, queen, king)
         - Channels 6-11: Black pieces (pawn, knight, bishop, rook, queen, king)
 
@@ -145,7 +145,7 @@ class GameSnapshotsDataset(Dataset):
             fen: FEN string representation of board
 
         Returns:
-            Tensor of shape (8, 8, 12)
+            Tensor of shape (8*8*12,)
         """
         board = chess.Board(fen)
         tensor = np.zeros((8, 8, 12), dtype=np.float32)
@@ -164,6 +164,9 @@ class GameSnapshotsDataset(Dataset):
                     piece_idx += 6
 
                 tensor[rank, file, piece_idx] = 1.0
+
+        # flatten tensor
+        tensor = board.reshape(8 * 8 * 12)
 
         return torch.from_numpy(tensor)
 
@@ -275,7 +278,7 @@ class GameSnapshotsDataset(Dataset):
         """Return the number of samples in the dataset."""
         return self.num_indexes
 
-    def __getitem__(self, idx: int) -> dict[str, Any]:
+    def __getitem__(self, idx: int) -> torch.Tensor:
         """Get a single sample from the dataset.
 
         Args:
@@ -290,7 +293,7 @@ class GameSnapshotsDataset(Dataset):
         #     query = "SELECT fen, move, white_elo, black_elo, result, turn FROM game_snapshots WHERE id=?"
         #     result = conn.cursor.execute(query, self.start_index + idx)
         #
-        # # convert to tensor
+        # # convert to tensorwhite_elo
 
         sample = self.data[idx]
 
@@ -300,19 +303,16 @@ class GameSnapshotsDataset(Dataset):
 
         move, promo = self._encode_move(sample["fen"], sample["move"])
 
-        # board
-
         # elos
+        elos = self._normalize_elo(sample["white_elo"], sample["black_elo"])
 
-        # flatten and combine to 1d tensor
+        # board
+        board = self._fen_to_tensor(sample["fen"])
 
-        return {
-            "board": self._fen_to_tensor(sample["fen"]),
-            "elo": self._normalize_elo(sample["white_elo"], sample["black_elo"]),
-            "result": self._encode_result(sample["result"], sample["turn"]),
-            "move": move,
-            "promotion": promo,
-        }
+        # combine to 1d tensor and output
+        output = torch.cat(move, promo, elos, board)
+
+        return output
 
 
 if __name__ == "__main__":
