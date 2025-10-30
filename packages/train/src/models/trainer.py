@@ -5,6 +5,7 @@ import time
 import torch
 from torch import nn
 from torch.optim import Adam
+from torch.utils.data import DataLoader
 
 from packages.train.src.dataset.fillers.fill_snapshots import fill_database_with_snapshots
 from packages.train.src.dataset.loaders.game_snapshots import GameSnapshotsDataset
@@ -55,18 +56,17 @@ class Trainer:
         data_split = database_info["data_split"]
         start_index = 0
 
-        self.train_dataloader = GameSnapshotsDataset(
-            start_index, total_instances * data_split["train"]
+        self.train_dataloader = self._create_dataloader(
+            start_index, int(total_instances * data_split["train"])
         )
-        start_index += total_instances * data_split["train"]
-        self.val_dataloader = GameSnapshotsDataset(
-            start_index, total_instances * data_split["validation"]
+        start_index += int(total_instances * data_split["train"])
+        self.val_dataloader = self._create_dataloader(
+            start_index, int(total_instances * data_split["validation"])
         )
-        start_index += total_instances * data_split["validation"]
-        self.train_dataloader = GameSnapshotsDataset(
-            start_index, total_instances * data_split["test"]
+        start_index += int(total_instances * data_split["validation"])
+        self.test_dataloader = self._create_dataloader(
+            start_index, int(total_instances * data_split["test"])
         )
-
         # Model Checkpoints Path
         self.save_directory = checkpoints["directory"]
         make_directory(self.save_directory)
@@ -77,6 +77,21 @@ class Trainer:
         make_directory(self.auto_save_path)
         self.auto_save_interval = checkpoints["auto_save_interval"]
         self.model_name = ""
+
+    def _create_dataloader(self, start: int, num_indexes: int) -> DataLoader:
+        """
+        Creates a DataLoader for the given dataset.
+
+        Args:
+            dataset (GameSnapshotsDataset): The dataset to create the DataLoader for.
+        """
+        dataset = GameSnapshotsDataset(start, num_indexes)
+
+        dataloader = DataLoader(
+            dataset, batch_size=self.batch_size, shuffle=True, num_workers=self.num_workers
+        )
+
+        return dataloader
 
     def _update_model_name(self):
         """
@@ -111,11 +126,14 @@ class Trainer:
         )
 
         last_save_time = time.time()
+
+        self.model.train()
         # Training loop
         for epoch in range(self.num_epochs):
             self.model.train()
 
-            for batch_x, batch_y in self.train_dataloader:
+            for _batch, (batch_x, batch_y) in enumerate(self.train_dataloader):
+                print(f"BATCH_X: {batch_x}")
                 optimizer.zero_grad()
                 outputs = self.model(batch_x)
                 loss = self.criterion(outputs, batch_y)
@@ -146,7 +164,7 @@ class Trainer:
 
         self.model.eval()
         with torch.no_grad():
-            for batch_x, batch_y in dataloader:
+            for _batch, (batch_x, batch_y) in enumerate(dataloader):
                 outputs = self.model(batch_x)
                 loss = self.criterion(outputs, batch_y)
                 total_loss += loss.item()
