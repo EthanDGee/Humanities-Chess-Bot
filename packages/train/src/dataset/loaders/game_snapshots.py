@@ -202,16 +202,24 @@ class GameSnapshotsDataset(Dataset):
         return onehot
 
     def _normalize_elo(self, white_elo: int, black_elo: int) -> torch.Tensor:
-        """Normalize ELO ratings by dividing by 3000.
+        """Normalize ELO ratings through z normalization based on values precomputed from all
+        of the data from 2013
 
         Args:
             white_elo: White player's ELO
             black_elo: Black player's ELO
 
         Returns:
-            Normalized tensor (2,) for [white_elo / 3000, black_elo / 3000]
+            Normalized tensor (2,) [white_elo, black_elo]
         """
-        return torch.tensor([white_elo / 3000.0, black_elo / 3000.0], dtype=torch.float32)
+
+        standard_deviation = 185.80054702756055
+        mean = 1638.43153
+
+        black_z_norm = (black_elo - mean) / standard_deviation
+        white_z_norm = (white_elo - mean) / standard_deviation
+
+        return torch.tensor([white_z_norm, black_z_norm], dtype=torch.float32)
 
     def _encode_move(self, fen: str, move_san: str) -> tuple[torch.Tensor, torch.Tensor]:
         """Encode move as one-hot vectors for move (combined start and end destination) and promotion.
