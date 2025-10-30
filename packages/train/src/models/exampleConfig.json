@@ -9,13 +9,13 @@
     "num_workers": 0
   },
   "database_info": {
-    "training_path": "",
-    "validation_path": "",
     "num_indexes": 100000,
-    "desired_elo_range": [
-      700,
-      1900
-    ]
+    "max_size_gb": 10,
+    "data_split": {
+      "train": 0.8,
+      "validation": 0.1,
+      "test": 0.1
+    }
   },
   "checkpoints": {
     "directory": "",

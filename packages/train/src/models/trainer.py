@@ -4,9 +4,11 @@ import random
 import time
 
 import torch
-from dataloader import ChessDataSet
 from torch import nn
 from torch.optim import Adam
+
+from packages.train.src.dataset.fillers.fill_snapshots import fill_database_with_snapshots
+from packages.train.src.dataset.loaders.game_snapshots import GameSnapshotsDataset
 
 
 class Trainer:
@@ -39,10 +41,27 @@ class Trainer:
         self.current_beta: float = self.betas[0]
         self.current_momentum: float = self.momementums[0]
 
-        # data loader
+        # data loaders
         total_instances = database_info["num_indexes"]
-        self.train_dataloader = ChessDataSet(database_info["training_path"], total_instances)
-        self.val_dataloader = ChessDataSet(database_info["validation_path"], total_instances * 0.2)
+
+        fill_database_with_snapshots(
+            snapshots_threshold=total_instances, max_size_gb=database_info["max_size_gb"]
+        )
+
+        data_split = database_info["data_split"]
+        start_index = 0
+
+        self.train_dataloader = GameSnapshotsDataset(
+            start_index, total_instances * data_split["train"]
+        )
+        start_index += total_instances * data_split["train"]
+        self.val_dataloader = GameSnapshotsDataset(
+            start_index, total_instances * data_split["validation"]
+        )
+        start_index += total_instances * data_split["validation"]
+        self.train_dataloader = GameSnapshotsDataset(
+            start_index, total_instances * data_split["tests"]
+        )
 
         # Model Checkpoints Path
         self.save_directory = checkpoints["directory"]
@@ -157,7 +176,6 @@ class Trainer:
         Conducts a random search for hyperparameter optimization by iteratively testing
         random configurations, evaluating their performance, and updating the best set
         of hyperparameters based on validation loss.
-
         Args:
             iterations (int): The number of random configurations to search over
 

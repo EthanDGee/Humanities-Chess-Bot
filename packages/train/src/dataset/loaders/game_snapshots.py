@@ -55,6 +55,7 @@ class GameSnapshotsDataset(Dataset):
     }
 
     def __init__(self, start_index: int, num_indexes: int, db_path: str | Path | None = None):
+        super().__init()
         # check if num indexes is possible with size of current dataset if not throw an error
         if count_snapshots() < start_index + num_indexes:
             raise ValueError(
