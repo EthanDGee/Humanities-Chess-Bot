@@ -55,7 +55,6 @@ class GameSnapshotsDataset(Dataset):
     }
 
     def __init__(self, start_index: int, num_indexes: int, db_path: str | Path | None = None):
-        super().__init()
         # check if num indexes is possible with size of current dataset if not throw an error
         if count_snapshots() < start_index + num_indexes:
             raise ValueError(
@@ -99,7 +98,7 @@ class GameSnapshotsDataset(Dataset):
                 tensor[rank, file, piece_idx] = 1.0
 
         # flatten tensor
-        tensor = board.reshape(8 * 8 * 12)
+        tensor = tensor.reshape(8 * 8 * 12)
 
         return torch.from_numpy(tensor)
 
@@ -252,9 +251,9 @@ class GameSnapshotsDataset(Dataset):
         board = self._fen_to_tensor(data["fen"])
 
         # combine to 1d tensor and output
-        labels = torch.cat(elos, turn, board)
+        labels = torch.cat((elos, turn, board), 1)
 
-        target = torch.cat(chosen_move, promo)
+        target = torch.cat((chosen_move, promo), 1)
         return labels, target
 
 

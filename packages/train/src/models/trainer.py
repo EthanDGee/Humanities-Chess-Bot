@@ -56,7 +56,7 @@ class Trainer:
         )
         start_index += total_instances * data_split["validation"]
         self.train_dataloader = GameSnapshotsDataset(
-            start_index, total_instances * data_split["tests"]
+            start_index, total_instances * data_split["test"]
         )
 
         # Model Checkpoints Path
@@ -142,8 +142,8 @@ class Trainer:
                 _, predicted = torch.max(outputs.data, 1)
                 correct += (predicted == batch_y).sum().item()
 
-        avg_loss = total_loss / len(dataloader)
-        accuracy = 100 * correct / len(dataloader)
+        avg_loss = total_loss / dataloader.num_indexes
+        accuracy = 100 * correct / dataloader.num_indexes
 
         self.model.train()
 
@@ -183,6 +183,7 @@ class Trainer:
 
         for _ in range(iterations):
             self.randomize_hyperparameters()
+            self._update_model_name()
             print(
                 f"Testing with LR: {self.current_lr}, Decay: {self.current_decay_rate}, Beta: {self.current_beta}, Momentum: {self.current_momentum}"
             )
@@ -221,11 +222,11 @@ class Trainer:
 
         # save the model
         if auto_save:
-            save_directory = self.auto_save_path + self.model_name
+            save_directory = f"{self.auto_save_path}{self.model_name}/"
         else:
-            save_directory = self.final_save + self.model_name
+            save_directory = f"{self.final_save}{self.model_name}/"
         timestamp = time.strftime("%Y%m%d-%H%M%S")
-        torch.save(self.model.state_dict(), f"{save_directory}/{timestamp}.pth")
+        torch.save(self.model.state_dict(), f"{save_directory}{timestamp}.pth")
 
         # save model performance metrics to csv
         self._update_saves_csv(timestamp)
@@ -296,6 +297,7 @@ class Trainer:
         print(
             f"Epoch: {epoch}/{self.num_epochs} | Train Loss: {train_loss:.4f}, Train Acc: {train_accuracy}, Val Loss: {val_loss:.4f}, Val Acc: {val_accuracy:.2f}%"
         )
+        print(self.model_name)
 
         # check if csv exists and if not create it and the associated headers
         if not os.path.exists(csv_path):
