@@ -278,7 +278,7 @@ class GameSnapshotsDataset(Dataset):
         """Return the number of samples in the dataset."""
         return self.num_indexes
 
-    def __getitem__(self, idx: int) -> torch.Tensor:
+    def __getitem__(self, idx: int):
         """Get a single sample from the dataset.
 
         Args:
@@ -289,30 +289,40 @@ class GameSnapshotsDataset(Dataset):
         """
 
         # # retrieve index from the database slice
-        # with sqlite3.connect(self.db_path) as conn:
-        #     query = "SELECT fen, move, white_elo, black_elo, result, turn FROM game_snapshots WHERE id=?"
-        #     result = conn.cursor.execute(query, self.start_index + idx)
-        #
-        # # convert to tensorwhite_elo
+        with sqlite3.connect(self.db_path) as conn:
+            query = "SELECT fen, move, white_elo, black_elo, result, turn FROM game_snapshots WHERE id=?"
+            cur = conn.cursor()
+            row = cur.execute(query, (self.start_index + idx,)).fetchone()
 
-        sample = self.data[idx]
+            # convert query to dict
+            data = {
+                "fen": row[0],
+                "move": row[1],
+                "white_elo": row[2] if row[2] is not None else 0,
+                "black_elo": row[3] if row[3] is not None else 0,
+                "result": row[4],
+                "turn": row[5],
+            }
+
+        # # convert to tensorwhite_elo
 
         # Encode all features
 
         # _encode_move
-
-        move, promo = self._encode_move(sample["fen"], sample["move"])
+        chosen_move, promo = self._encode_move(data["fen"], data["move"])
+        turn = self._encode_turn(data["turn"])
 
         # elos
-        elos = self._normalize_elo(sample["white_elo"], sample["black_elo"])
+        elos = self._normalize_elo(data["white_elo"], data["black_elo"])
 
         # board
-        board = self._fen_to_tensor(sample["fen"])
+        board = self._fen_to_tensor(data["fen"])
 
         # combine to 1d tensor and output
-        output = torch.cat(move, promo, elos, board)
+        labels = torch.cat(elos, turn, board)
 
-        return output
+        target = torch.cat(chosen_move, promo)
+        return labels, target
 
 
 if __name__ == "__main__":
