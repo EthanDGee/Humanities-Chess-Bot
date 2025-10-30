@@ -10,6 +10,14 @@ from packages.train.src.dataset.fillers.fill_snapshots import fill_database_with
 from packages.train.src.dataset.loaders.game_snapshots import GameSnapshotsDataset
 
 
+def make_directory(directory_name):
+    try:
+        os.mkdir(directory_name)
+        print(f"Directory '{directory_name}' created successfully.")
+    except FileExistsError:
+        print(f"Directory '{directory_name}' already exists.")
+
+
 class Trainer:
     def __init__(self, values: dict, model):
         hyperparameters = values["hyperparameters"]
@@ -61,9 +69,13 @@ class Trainer:
 
         # Model Checkpoints Path
         self.save_directory = checkpoints["directory"]
-        self.auto_save_path = self.save_directory + "/check_points/"
+        make_directory(self.save_directory)
+        self.final_save = self.save_directory + "trained_models/"
+        make_directory(self.final_save)
+
+        self.auto_save_path = self.save_directory + "check_points/"
+        make_directory(self.auto_save_path)
         self.auto_save_interval = checkpoints["auto_save_interval"]
-        self.final_save = self.save_directory + "/trained_models/"
         self.model_name = ""
 
     def _update_model_name(self):
@@ -184,6 +196,11 @@ class Trainer:
         for _ in range(iterations):
             self.randomize_hyperparameters()
             self._update_model_name()
+
+            # create new directories
+            make_directory(self.auto_save_path + self.model_name + "/")
+            make_directory(self.final_save + self.model_name + "/")
+
             print(
                 f"Testing with LR: {self.current_lr}, Decay: {self.current_decay_rate}, Beta: {self.current_beta}, Momentum: {self.current_momentum}"
             )
@@ -250,7 +267,7 @@ class Trainer:
         Return:
               None
         """
-        csv_path = self.final_save + self.model_name + "saves.csv"
+        csv_path = self.final_save + self.model_name + "/saves.csv"
 
         train_loss, train_accuracy = self._dataset_loss(self.train_dataloader)
         val_loss, val_accuracy = self._dataset_loss(self.val_dataloader)
@@ -289,7 +306,7 @@ class Trainer:
         Returns:
             None
         """
-        csv_path = self.final_save + self.model_name + "epochs.csv"
+        csv_path = self.final_save + self.model_name + "/epochs.csv"
 
         train_loss, train_accuracy = self._dataset_loss(self.train_dataloader)
         val_loss, val_accuracy = self._dataset_loss(self.val_dataloader)
