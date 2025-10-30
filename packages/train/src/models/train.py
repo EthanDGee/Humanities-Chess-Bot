@@ -2,7 +2,8 @@ import json
 import os
 import sys
 
-# from packages.train.src.models.trainer import Trainer
+from packages.train.src.models.neural_network import NeuralNetwork
+from packages.train.src.models.trainer import Trainer
 
 
 def print_usage():
@@ -27,11 +28,11 @@ def main():
     except Exception as e:
         print(f"Error loading JSON: {e}")
         sys.exit(1)
-    print(config)
-    # trainer = Trainer(config)
-    #
-    # trainer.random_search(config["num_iterations")
-    #
+
+    neural_network = NeuralNetwork()
+    trainer = Trainer(config, neural_network)
+
+    trainer.random_search(config["num_iterations"])
 
 
 if __name__ == "__main__":

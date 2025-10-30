@@ -1,4 +1,3 @@
-import json
 import os
 import random
 import time
@@ -12,13 +11,10 @@ from packages.train.src.dataset.loaders.game_snapshots import GameSnapshotsDatas
 
 
 class Trainer:
-    def __init__(self, parameter_path: str, model):
-        with open(parameter_path) as file:
-            values = json.load(file)
-
-            hyperparameters = values["hyperparameters"]
-            database_info = values["database_info"]
-            checkpoints = values["checkpoints"]
+    def __init__(self, values: dict, model):
+        hyperparameters = values["hyperparameters"]
+        database_info = values["database_info"]
+        checkpoints = values["checkpoints"]
 
         # Model
         self.model = model
@@ -33,7 +29,7 @@ class Trainer:
         self.learning_rates: list = hyperparameters["learning_rates"]
         self.decay_rates: list = hyperparameters["decay_rates"]
         self.betas: list = hyperparameters["betas"]
-        self.momementums: list = hyperparameters["momementums"]
+        self.momementums: list = hyperparameters["momentums"]
 
         # current parameters
         self.current_lr: float = self.learning_rates[0]
