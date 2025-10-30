@@ -54,15 +54,7 @@ class GameSnapshotsDataset(Dataset):
         chess.QUEEN: 4,
     }
 
-    def __init__(
-        self,
-        start_index: int,
-        num_indexes: int,
-        db_path: str | Path | None = None,
-        elo_filter: tuple[int, int] | None = None,
-        result_filter: list[str] | None = None,
-        limit: int | None = None,
-    ):
+    def __init__(self, start_index: int, num_indexes: int, db_path: str | Path | None = None):
         # check if num indexes is possible with size of current dataset if not throw an error
         if count_snapshots() < start_index + num_indexes:
             raise ValueError(
@@ -72,66 +64,6 @@ class GameSnapshotsDataset(Dataset):
         self.num_indexes = num_indexes
 
         self.db_path = str(db_path) if db_path else DB_FILE
-        self.data = self._load_data(elo_filter, result_filter, limit)
-
-    def _load_data(
-        self,
-        elo_filter: tuple[int, int] | None,
-        result_filter: list[str] | None,
-        limit: int | None,
-    ) -> list[dict]:
-        """Load data from database with optional filters."""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-
-        # Build query with filters
-        query = """
-            SELECT fen, move, white_elo, black_elo, result, turn
-            FROM game_snapshots
-            WHERE 1=1
-        """
-        params: list[int | str] = []
-
-        if elo_filter:
-            min_elo, max_elo = elo_filter
-            query += """
-                AND white_elo IS NOT NULL
-                AND black_elo IS NOT NULL
-                AND white_elo >= ?
-                AND white_elo <= ?
-                AND black_elo >= ?
-                AND black_elo <= ?
-            """
-            params.extend([min_elo, max_elo, min_elo, max_elo])
-
-        if result_filter:
-            placeholders = ",".join("?" * len(result_filter))
-            query += f" AND result IN ({placeholders})"
-            params.extend(result_filter)
-
-        if limit:
-            query += " LIMIT ?"
-            params.append(limit)
-
-        cursor.execute(query, params)
-        rows = cursor.fetchall()
-        conn.close()
-
-        # Convert rows to dictionaries
-        data = []
-        for row in rows:
-            data.append(
-                {
-                    "fen": row[0],
-                    "move": row[1],
-                    "white_elo": row[2] if row[2] is not None else 0,
-                    "black_elo": row[3] if row[3] is not None else 0,
-                    "result": row[4],
-                    "turn": row[5],
-                }
-            )
-
-        return data
 
     def _fen_to_tensor(self, fen: str) -> torch.Tensor:
         """Convert FEN string to tensor representation.
@@ -350,7 +282,7 @@ if __name__ == "__main__":
 
     # Example 2: Filtered dataset (high-rated games only)
     print("\n2. Creating filtered dataset (ELO 1000-2000)...")
-    dataset_filtered = GameSnapshotsDataset(start_index=0, num_indexes=50, elo_filter=(1000, 2000))
+    dataset_filtered = GameSnapshotsDataset(start_index=0, num_indexes=50)
     print(f"   Filtered dataset size: {len(dataset_filtered)} positions")
 
     # Example 3: Use with PyTorch DataLoader
