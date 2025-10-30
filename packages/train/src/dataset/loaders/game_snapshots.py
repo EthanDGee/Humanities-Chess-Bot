@@ -174,13 +174,11 @@ class GameSnapshotsDataset(Dataset):
             move = board.parse_san(move_san)
 
             # get the rows and columsn for the start and end positions
-            start_col = ord(move.from_square.square_name[0]) - 97
-            start_row = int(move.from_square.square_name[1])
+            start_col = move.from_square % 8
+            start_row = move.from_square // 8
 
-            end_col = (
-                ord(move.to_square.square_name[-2]) - 97
-            )  # we negative index to get the end notation
-            end_row = move.to_square.square_name[-1]
+            end_col = move.to_square % 8
+            end_row = move.to_square // 8
 
             # encode the values by using base 8 numering giving each id a digit place (stored in base 10)
             encoding_index = start_col
@@ -189,15 +187,15 @@ class GameSnapshotsDataset(Dataset):
             encoding_index += 8**3 * end_row
 
             # Encode 4 digit base 8 index (0-4097)
-            move = torch.zeros(4096, dtype=torch.float32)
-            move[encoding_index] = 1.0
+            encoded_move = torch.zeros(4096, dtype=torch.float32)
+            encoded_move[encoding_index] = 1.0
 
             # Encode promotion piece
             promotion = torch.zeros(5, dtype=torch.float32)
             promotion_idx = self.PROMOTION_PIECES.get(move.promotion, 0)
             promotion[promotion_idx] = 1.0
 
-            return move, promotion
+            return encoded_move, promotion
 
         except (ValueError, AssertionError):
             # If move parsing fails, return zeros
@@ -251,9 +249,9 @@ class GameSnapshotsDataset(Dataset):
         board = self._fen_to_tensor(data["fen"])
 
         # combine to 1d tensor and output
-        labels = torch.cat((elos, turn, board), 1)
+        labels = torch.cat((elos, turn, board), 0)
 
-        target = torch.cat((chosen_move, promo), 1)
+        target = torch.cat((chosen_move, promo), 0)
         return labels, target
 
 
