@@ -207,13 +207,16 @@ class GameSnapshotsDataset(Dataset):
         Returns:
             Dictionary containing encoded tensors ready for training
         """
+        # to avoid the off by one error caused by the database starting at 1
+        idx += self.start_index + 1
 
         # # retrieve index from the database slice
         with sqlite3.connect(self.db_path) as conn:
             query = "SELECT fen, move, white_elo, black_elo, result, turn FROM game_snapshots WHERE id=?"
             cur = conn.cursor()
-            row = cur.execute(query, (self.start_index + idx,)).fetchone()
-
+            row = cur.execute(query, (idx,)).fetchone()
+            if row is None:
+                raise IndexError(f"No row at offset {self.start_index + idx}.")
             # convert query to dict
             data = {
                 "fen": row[0],

@@ -67,6 +67,7 @@ class Trainer:
         self.test_dataloader = self._create_dataloader(
             start_index, int(total_instances * data_split["test"])
         )
+
         # Model Checkpoints Path
         self.save_directory = checkpoints["directory"]
         make_directory(self.save_directory)
@@ -132,9 +133,8 @@ class Trainer:
         for epoch in range(self.num_epochs):
             self.model.train()
 
-            for batch, (batch_x, (move_y, promo_y)) in enumerate(self.train_dataloader):
+            for _batch, (batch_x, (move_y, promo_y)) in enumerate(self.train_dataloader):
                 optimizer.zero_grad()
-                print(batch)
                 predicted_moves, promos = self.model(batch_x)
 
                 # calculate loss
@@ -164,21 +164,25 @@ class Trainer:
         """
 
         total_loss = 0.0
-        correct = 0
+        correct_moves = 0
         total_loss = 0
 
         self.model.eval()
         with torch.no_grad():
-            for _batch, (batch_x, batch_y) in enumerate(dataloader):
-                outputs = self.model(batch_x)
-                loss = self.criterion(outputs, batch_y)
+            for _batch, (batch_x, (move_y, promo_y)) in enumerate(dataloader):
+                predicted_moves, promos = self.model(batch_x)
+
+                move_loss = self.criterion(predicted_moves, move_y)
+                promo_loss = self.criterion(promos, promo_y)
+                loss = move_loss + promo_loss
                 total_loss += loss.item()
 
-                _, predicted = torch.max(outputs.data, 1)
-                correct += (predicted == batch_y).sum().item()
+                # Only calculate the accuracy of moves
+                _, predicted_moves = torch.max(predicted_moves.data, 1)
+                correct_moves = (predicted_moves == move_y).sum().item()
 
-        avg_loss = total_loss / dataloader.num_indexes
-        accuracy = 100 * correct / dataloader.num_indexes
+        avg_loss = total_loss / len(dataloader.dataset)
+        accuracy = 100 * correct_moves / len(dataloader.dataset)
 
         self.model.train()
 
@@ -259,7 +263,7 @@ class Trainer:
         Returns:
             train_dataloader
         """
-
+        print("Saving model...")
         # save the model
         if auto_save:
             save_directory = f"{self.auto_save_path}{self.model_name}/"
@@ -337,7 +341,6 @@ class Trainer:
         print(
             f"Epoch: {epoch}/{self.num_epochs} | Train Loss: {train_loss:.4f}, Train Acc: {train_accuracy}, Val Loss: {val_loss:.4f}, Val Acc: {val_accuracy:.2f}%"
         )
-        print(self.model_name)
 
         # check if csv exists and if not create it and the associated headers
         if not os.path.exists(csv_path):
@@ -349,5 +352,9 @@ class Trainer:
             file.write(
                 f"{epoch},{self.current_lr},{self.current_decay_rate},{self.current_beta},{self.current_momentum},{train_loss},{train_accuracy},{val_loss},{val_accuracy}\n"
             )
-
         print(f"Wrote {epoch} info to {csv_path}")
+
+        # save model
+        save_directory = f"{self.auto_save_path}{self.model_name}/"
+        torch.save(self.model.state_dict(), f"{save_directory}epoch_{epoch}.pth")
+        print(f"Saved model for epoch {epoch} to {save_directory}epoch_{epoch}.pth")
