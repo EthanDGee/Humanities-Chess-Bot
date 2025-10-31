@@ -156,8 +156,8 @@ class GameSnapshotsDataset(Dataset):
 
         return torch.tensor([white_z_norm, black_z_norm], dtype=torch.float32)
 
-    def _encode_move(self, fen: str, move_san: str) -> tuple[torch.Tensor, torch.Tensor]:
-        """Encode move as one-hot vectors for move (combined start and end destination) and promotion.
+    def _encode_move(self, fen: str, move_san: str) -> tuple[int, int]:
+        """Encode move as indexes of start and end postions and promotion index.
 
         Args:
             fen: FEN string of the position before the move
@@ -165,8 +165,8 @@ class GameSnapshotsDataset(Dataset):
 
         Returns:
             Tuple of (from_square, to_square, promotion) tensors
-            - move: (4096,) one-hot tensor that stores both start and end positions
-            - promotion: (5,) one-hot tensor for [none, N, B, R, Q]
+            - move: int index stores both start and end positions
+            - promotion: int one-hot tensor for [none, N, B, R, Q]
         """
         try:
             board = chess.Board(fen)
@@ -181,28 +181,18 @@ class GameSnapshotsDataset(Dataset):
             end_row = move.to_square // 8
 
             # encode the values by using base 8 numering giving each id a digit place (stored in base 10)
-            encoding_index = start_col
-            encoding_index += 8 * start_row
-            encoding_index += 8**2 * end_col
-            encoding_index += 8**3 * end_row
+            move_index = start_col
+            move_index += 8 * start_row
+            move_index += 8**2 * end_col
+            move_index += 8**3 * end_row
 
-            # Encode 4 digit base 8 index (0-4097)
-            encoded_move = torch.zeros(4096, dtype=torch.float32)
-            encoded_move[encoding_index] = 1.0
-
-            # Encode promotion piece
-            promotion = torch.zeros(5, dtype=torch.float32)
             promotion_idx = self.PROMOTION_PIECES.get(move.promotion, 0)
-            promotion[promotion_idx] = 1.0
 
-            return encoded_move, promotion
+            return move_index, promotion_idx
 
         except (ValueError, AssertionError):
             # If move parsing fails, return zeros
-            move = torch.zeros(4096, dtype=torch.float32)
-            promotion = torch.zeros(5, dtype=torch.float32)
-            promotion[0] = 1.0  # No promotion
-            return move, promotion
+            return 0, 0
 
     def __len__(self) -> int:
         """Return the number of samples in the dataset."""
@@ -251,8 +241,7 @@ class GameSnapshotsDataset(Dataset):
         # combine to 1d tensor and output
         labels = torch.cat((elos, turn, board), 0)
 
-        target = torch.cat((chosen_move, promo), 0)
-        return labels, target
+        return labels, (chosen_move, promo)
 
 
 if __name__ == "__main__":

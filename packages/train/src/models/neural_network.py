@@ -5,9 +5,9 @@ class NeuralNetwork(nn.Module):
     def __init__(self):
         super().__init__()
 
-        # this is identical to the stock fish - engineered features and class based output layer
-        self.layers = nn.Sequential(
-            nn.Linear(67, 512),
+        # this is identical to the stock fish -engineered features
+        self.shared = nn.Sequential(
+            nn.Linear(772, 512),
             nn.ReLU(),
             nn.Linear(512, 32),
             nn.ReLU(),
@@ -19,12 +19,14 @@ class NeuralNetwork(nn.Module):
             nn.ReLU(),
             nn.Linear(32, 32),
             nn.ReLU(),
-            nn.Linear(32, 4164),
-            nn.Softmax(),
+            nn.Linear(32, 32),
         )
 
+        # here we split into two heads to handle move and promote predictions separately
+        self.move_head = nn.Sequential(nn.Linear(32, 4096), nn.Softmax())
+        self.promote_head = nn.Sequential(nn.Linear(32, 4), nn.Softmax())
+
     def forward(self, x):
-        return self.layers(x)
-
-
-model = NeuralNetwork()
+        shared_output = self.shared(x)
+        # output both move and promote predictions as a tuple
+        return self.move_head(shared_output), self.promote_head(shared_output)

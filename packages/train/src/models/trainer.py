@@ -132,11 +132,16 @@ class Trainer:
         for epoch in range(self.num_epochs):
             self.model.train()
 
-            for _batch, (batch_x, batch_y) in enumerate(self.train_dataloader):
-                print(f"BATCH_X: {batch_x}")
+            for batch, (batch_x, (move_y, promo_y)) in enumerate(self.train_dataloader):
                 optimizer.zero_grad()
-                outputs = self.model(batch_x)
-                loss = self.criterion(outputs, batch_y)
+                print(batch)
+                predicted_moves, promos = self.model(batch_x)
+
+                # calculate loss
+                move_loss = self.criterion(predicted_moves, move_y)
+                promo_loss = self.criterion(promos, promo_y)
+                loss = move_loss + promo_loss
+
                 loss.backward()
                 optimizer.step()
 
