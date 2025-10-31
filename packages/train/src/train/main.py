@@ -3,7 +3,7 @@ import os
 import sys
 
 from packages.train.src.models.neural_network import NeuralNetwork
-from packages.train.src.models.trainer import Trainer
+from packages.train.src.train.trainer import Trainer
 
 
 def print_usage():
