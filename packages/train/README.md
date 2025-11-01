@@ -99,8 +99,8 @@ The training entrypoint takes a single argument: the path to a JSON configuratio
 
 ### Field descriptions
 
-- `cuda_enabled` (bool, optional): If true and a CUDA-capable GPU is available,  training will use the model to speedup training process.
-- `num_iterations` (int): Number of random hyperparameter configurations to try. For each iteration, one value is sampled from each list  in `hyperparameters` and trained for `num_epochs`.
+- `cuda_enabled` (bool, optional): If true and a CUDA-capable GPU is available, training will use the model to speedup training process.
+- `num_iterations` (int): Number of random hyperparameter configurations to try. For each iteration, one value is sampled from each list in `hyperparameters` and trained for `num_epochs`.
 
 - `hyperparameters` (object):
   - `learning_rates` (list[float]): Candidate learning rates for Adam (`lr`).

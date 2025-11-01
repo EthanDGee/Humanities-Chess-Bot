@@ -190,7 +190,6 @@ class Trainer:
 
         total_loss = 0.0
         correct_moves = 0
-        total_loss = 0
 
         self.model.eval()
         non_blocking = self.device.type == "cuda"
