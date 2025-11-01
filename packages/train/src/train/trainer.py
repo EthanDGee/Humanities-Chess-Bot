@@ -85,7 +85,7 @@ class Trainer:
 
         Args:
             start (int): The starting index for the dataset subset.
-            num_indexes (int): The number of indexes to include in the dataset subset
+            num_indexes (int): The number of indexes to include in the dataset subset.
         """
         dataset = GameSnapshotsDataset(start, num_indexes)
 
@@ -254,7 +254,7 @@ class Trainer:
         Saves the model state to a file in the appropriate directory.
 
         This method saves the state of the model to either the check_points
-        directory for the model or the final output directoryd depending on
+        directory for the model or the final output directory depending on
         whether the auto-save option is enabled or not.
 
         Args:
@@ -262,7 +262,7 @@ class Trainer:
                 directory or the final save directory. Defaults to True.
 
         Returns:
-            train_dataloader
+            None
         """
         print("Saving model...")
         # save the model

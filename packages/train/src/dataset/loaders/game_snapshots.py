@@ -210,7 +210,7 @@ class GameSnapshotsDataset(Dataset):
         # to avoid the off by one error caused by the database starting at 1
         idx += self.start_index + 1
 
-        # # retrieve index from the database slice
+        # retrieve index from the database slice
         with sqlite3.connect(self.db_path) as conn:
             query = "SELECT fen, move, white_elo, black_elo, result, turn FROM game_snapshots WHERE id=?"
             cur = conn.cursor()
