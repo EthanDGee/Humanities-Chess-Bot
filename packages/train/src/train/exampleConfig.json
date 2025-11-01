@@ -1,4 +1,6 @@
 {
+  "num_iterations": 1000,
+  "cuda_enabled": true,
   "hyperparameters": {
     "learning_rates": [],
     "decay_rates": [],
@@ -20,6 +22,5 @@
   "checkpoints": {
     "directory": "",
     "auto_save_interval": 0
-  },
-  "cuda_enabled" : true
+  }
 }
