@@ -209,8 +209,8 @@ class Trainer:
                 total_loss += loss.item()
 
                 # Only calculate the accuracy of moves
-                _, predicted_moves_idx = torch.max(predicted_moves.data, 1)
-                correct_moves += (predicted_moves_idx == move_y).sum().item()
+                _, predicted_moves = torch.max(predicted_moves.data, 1)
+                correct_moves += (predicted_moves == move_y).sum().item()
 
         avg_loss = total_loss / len(dataloader.dataset)
         accuracy = 100 * correct_moves / len(dataloader.dataset)
