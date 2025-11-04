@@ -56,7 +56,7 @@ class Trainer:
             self.cuda_enabled = False
         # Select device
         self.device = torch.device(
-            "cuda" if (self.cuda_enabled and torch.cuda.is_available()) else "cpu"
+            "cuda" if self.cuda_enabled else "cpu"
         )
 
         # Move model and criterion to the device
