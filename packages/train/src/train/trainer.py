@@ -7,7 +7,12 @@ from torch import nn
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 
-from packages.train.src.constants import CHECK_POINT_INFO_FILE_NAME, EPOCH_INFO_FILE_NAME
+from packages.train.src.constants import (
+    CHECK_POINT_DIR,
+    CHECK_POINT_INFO_FILE_NAME,
+    EPOCH_INFO_FILE_NAME,
+    FINAL_SAVES_DIR,
+)
 from packages.train.src.dataset.fillers.fill_snapshots import fill_database_with_snapshots
 from packages.train.src.dataset.loaders.game_snapshots import GameSnapshotsDataset
 
@@ -72,10 +77,10 @@ class Trainer:
         # Model Checkpoints Path
         self.save_directory = checkpoints["directory"]
         make_directory(self.save_directory)
-        self.final_save = self.save_directory + "trained_models/"
+        self.final_save = self.save_directory + FINAL_SAVES_DIR + "/"
         make_directory(self.final_save)
 
-        self.auto_save_path = self.save_directory + "check_points/"
+        self.auto_save_path = self.save_directory + CHECK_POINT_DIR
         make_directory(self.auto_save_path)
         self.auto_save_interval = checkpoints["auto_save_interval"]
         self.model_name = ""
