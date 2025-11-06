@@ -59,3 +59,8 @@ PIECE_TO_INT = {
 
 # Board representation
 BOARD_SIZE = 64
+
+# Model Saving Data
+
+CHECK_POINT_INFO_FILE_NAME = os.getenv("CHECK_POINT_INFO_FILE_NAME", "saves.csv")
+EPOCH_INFO_FILE_NAME = os.getenv("EPOCH_INFO_FILE_NAME", "epochs.csv")

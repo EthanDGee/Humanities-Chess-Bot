@@ -7,6 +7,7 @@ from torch import nn
 from torch.optim import Adam
 from torch.utils.data import DataLoader
 
+from packages.train.src.constants import CHECK_POINT_INFO_FILE_NAME, EPOCH_INFO_FILE_NAME
 from packages.train.src.dataset.fillers.fill_snapshots import fill_database_with_snapshots
 from packages.train.src.dataset.loaders.game_snapshots import GameSnapshotsDataset
 
@@ -295,7 +296,7 @@ class Trainer:
         Return:
               None
         """
-        csv_path = self.final_save + self.model_name + "/saves.csv"
+        csv_path = self.final_save + self.model_name + "/" + CHECK_POINT_INFO_FILE_NAME
 
         train_loss, train_accuracy = self._dataset_loss(self.train_dataloader)
         val_loss, val_accuracy = self._dataset_loss(self.val_dataloader)
@@ -334,7 +335,7 @@ class Trainer:
         Returns:
             None
         """
-        csv_path = self.final_save + self.model_name + "/epochs.csv"
+        csv_path = self.final_save + self.model_name + "/" + EPOCH_INFO_FILE_NAME
 
         train_loss, train_accuracy = self._dataset_loss(self.train_dataloader)
         val_loss, val_accuracy = self._dataset_loss(self.val_dataloader)
