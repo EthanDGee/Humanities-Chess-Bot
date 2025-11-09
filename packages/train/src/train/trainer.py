@@ -80,7 +80,7 @@ class Trainer:
         self.final_save = self.save_directory + FINAL_SAVES_DIR + "/"
         make_directory(self.final_save)
 
-        self.auto_save_path = self.save_directory + CHECK_POINT_DIR
+        self.auto_save_path = self.save_directory + CHECK_POINT_DIR + "/"
         make_directory(self.auto_save_path)
         self.auto_save_interval = checkpoints["auto_save_interval"]
         self.model_name = ""
@@ -312,14 +312,12 @@ class Trainer:
 
         # check if csv exists and if not create it and the associated headers
         if not os.path.exists(csv_path):
-            header = "version_name,learning_rate,decay_rate,beta,momentum,train_loss,train_accuracy,val_loss,val_accuracy\n"
+            header = "time_stamp,train_loss,train_accuracy,val_loss,val_accuracy\n"
             with open(csv_path, "w") as file:
                 file.write(header)
 
         with open(csv_path, "a") as file:
-            file.write(
-                f"{timestamp},{self.current_lr},{self.current_decay_rate},{self.current_beta},{self.current_momentum},{train_loss},{train_accuracy},{val_loss},{val_accuracy}\n"
-            )
+            file.write(f"{timestamp},{train_loss},{train_accuracy},{val_loss},{val_accuracy}\n")
 
         print(f"Wrote {timestamp} info to {csv_path}")
 
@@ -351,14 +349,12 @@ class Trainer:
 
         # check if csv exists and if not create it and the associated headers
         if not os.path.exists(csv_path):
-            header = "epoch,learning_rate,decay_rate,beta,momentum,train_loss,train_accuracy,val_loss,val_accuracy\n"
+            header = "epoch,train_loss,train_accuracy,val_loss,val_accuracy\n"
             with open(csv_path, "w") as file:
                 file.write(header)
 
         with open(csv_path, "a") as file:
-            file.write(
-                f"{epoch},{self.current_lr},{self.current_decay_rate},{self.current_beta},{self.current_momentum},{train_loss},{train_accuracy},{val_loss},{val_accuracy}\n"
-            )
+            file.write(f"{epoch},{train_loss},{train_accuracy},{val_loss},{val_accuracy}\n")
         print(f"Wrote {epoch} info to {csv_path}")
 
         # save model

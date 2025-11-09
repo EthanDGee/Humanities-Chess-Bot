@@ -218,7 +218,7 @@ class Analyzer:
 
         save_df = pd.read_csv(save_csv_path)
         epoch_df = pd.read_csv(epoch_csv_path)
-        save_df["timestamp"] = pd.to_datetime(save_df["version_name"], format="%Y%m%d-%H%M%S")
+        save_df["timestamp"] = pd.to_datetime(save_df["time_stamp"], format="%Y%m%d-%H%M%S")
 
         self._create_epoch_plots(epoch_df, model_name)
         self._create_save_plots(save_df, model_name)
@@ -227,7 +227,7 @@ class Analyzer:
 
 
 if __name__ == "__main__":
-    analyzer = Analyzer(training_directory="runs")
+    analyzer = Analyzer(training_directory="analysis")
     print(analyzer.model_directories)
     for model in analyzer.model_directories:
         analyzer._graph_training_curves(model)
