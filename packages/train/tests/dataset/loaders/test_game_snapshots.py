@@ -20,7 +20,7 @@ class TestGameSnapshotsDataset:
         dataset = GameSnapshotsDataset(0, 1, db_path=":memory:")
         fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"  # Starting position
         tensor = dataset._fen_to_tensor(fen)
-        assert tensor.shape == (8 * 8 * 12)
+        assert tensor.shape.numel() == (8 * 8 * 12)
         assert tensor.sum().item() == 32  # 32 pieces on the board
 
     def test_encode_result(self):
