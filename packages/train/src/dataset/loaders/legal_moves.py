@@ -5,12 +5,11 @@ from pathlib import Path
 from typing import Any
 
 import torch
-from torch.utils.data import Dataset
 
 from packages.train.src.constants import DB_FILE
 
 
-class LegalMovesDataset(Dataset):
+class LegalMovesDataset:
     """PyTorch Dataset for legal chess moves.
 
     Loads legal moves and their associated piece types from the database.
@@ -249,23 +248,3 @@ if __name__ == "__main__":
         print(f"  Original move: {move_str}")
         print(f"  Index: {move_idx}")
         print(f"  Reconstructed: {reconstructed}")
-
-    # Use with DataLoader
-    if len(dataset) > 0:
-        from torch.utils.data import DataLoader
-
-        print("\nCreating DataLoader...")
-        dataloader = DataLoader(
-            dataset, batch_size=32, shuffle=True, collate_fn=collate_legal_moves
-        )
-
-        # Get one batch
-        batch = next(iter(dataloader))
-        print("\nFirst batch:")
-        print(f"  Batch size: {len(batch['move'])}")
-        print(f"  Move encodings shape: {batch['move_encoding'].shape}")
-        print(f"  Piece encodings shape: {batch['piece_encoding'].shape}")
-        print(f"  Sample moves: {batch['move'][:5]}")
-    else:
-        print("\nDataset is empty. Cannot create DataLoader.")
-        print("Run the dataset generation pipeline first to populate the database.")
