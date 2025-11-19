@@ -172,11 +172,11 @@ class GameSnapshotsDataset(Dataset):
             - promotion: int one-hot tensor for [none, N, B, R, Q]
         """
         try:
-            move_index = self.legal_moves.get_index_from_move(move_san)
+            board = chess.Board(fen)
 
             # Parse SAN move to get UCI move to determine promotion
-            board = chess.Board(fen)
             move = board.parse_san(move_san)
+            move_index = self.legal_moves.get_index_from_move(board.uci(move))
             promotion_idx = self.PROMOTION_PIECES.get(move.promotion, 0)
 
             return move_index, promotion_idx
@@ -232,6 +232,7 @@ class GameSnapshotsDataset(Dataset):
 
         # _encode_move
         chosen_move, promo = self._encode_move(data["fen"], data["move"])
+        print(chosen_move, promo)
         turn = self._encode_turn(data["turn"])
 
         # elos

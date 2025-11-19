@@ -11,7 +11,7 @@ def get_legal_moves() -> Iterator[LegalMove]:
 
     Each yielded value is a LegalMove(move: str, types: List[str]).
     """
-    files = "ABCDEFGH"
+    files = "abcdefgh"
     ranks = "12345678"
 
     def to_square(x: int, y: int) -> str:
