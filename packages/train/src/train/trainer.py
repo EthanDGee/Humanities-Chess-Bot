@@ -13,7 +13,9 @@ from packages.train.src.constants import (
     EPOCH_INFO_FILE_NAME,
     FINAL_SAVES_DIR,
 )
-from packages.train.src.dataset.fillers.fill_snapshots import fill_database_with_snapshots
+from packages.train.src.dataset.fillers.fill_snapshots_and_statistics import (
+    fill_database_with_snapshots,
+)
 from packages.train.src.dataset.loaders.game_snapshots import GameSnapshotsDataset
 
 
@@ -61,9 +63,7 @@ class Trainer:
             print("Warning: cuda_enabled=True but CUDA is not available. Falling back to CPU.")
             self.cuda_enabled = False
         # Select device
-        self.device = torch.device(
-            "cuda" if self.cuda_enabled else "cpu"
-        )
+        self.device = torch.device("cuda" if self.cuda_enabled else "cpu")
 
         # Move model and criterion to the device
         self.model.to(self.device)
