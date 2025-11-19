@@ -102,7 +102,8 @@ class GameSnapshotsDataset(Dataset):
 
         return torch.from_numpy(tensor)
 
-    def _encode_result(self, result: str, turn: str) -> torch.Tensor:
+    @staticmethod
+    def _encode_result(result: str, turn: str) -> torch.Tensor:
         """Encode result as scalar value from current player's perspective.
 
         Args:
@@ -120,7 +121,8 @@ class GameSnapshotsDataset(Dataset):
 
         return torch.tensor([value], dtype=torch.float32)
 
-    def _encode_turn(self, turn: str) -> torch.Tensor:
+    @staticmethod
+    def _encode_turn(turn: str) -> torch.Tensor:
         """Encode turn as one-hot vector.
 
         Args:
@@ -136,7 +138,8 @@ class GameSnapshotsDataset(Dataset):
             onehot[1] = 1.0
         return onehot
 
-    def _normalize_elo(self, white_elo: int, black_elo: int) -> torch.Tensor:
+    @staticmethod
+    def _normalize_elo(white_elo: int, black_elo: int) -> torch.Tensor:
         """Normalize ELO ratings through z normalization based on values precomputed from all
         of the data from 2013
 
@@ -157,7 +160,7 @@ class GameSnapshotsDataset(Dataset):
         return torch.tensor([white_z_norm, black_z_norm], dtype=torch.float32)
 
     def _encode_move(self, fen: str, move_san: str) -> tuple[int, int]:
-        """Encode move as indexes of start and end postions and promotion index.
+        """Encode move as indexes of start and end positions and promotion index.
 
         Args:
             fen: FEN string of the position before the move
@@ -169,12 +172,11 @@ class GameSnapshotsDataset(Dataset):
             - promotion: int one-hot tensor for [none, N, B, R, Q]
         """
         try:
+            move_index = self.legal_moves.get_index_from_move(move_san)
+
+            # Parse SAN move to get UCI move to determine promotion
             board = chess.Board(fen)
-            # Parse SAN move to get UCI move
             move = board.parse_san(move_san)
-
-            move_index = self.legal_moves.get_index_from_move(move)
-
             promotion_idx = self.PROMOTION_PIECES.get(move.promotion, 0)
 
             return move_index, promotion_idx
@@ -202,17 +204,16 @@ class GameSnapshotsDataset(Dataset):
         # retrieve index from the database slice with JOIN to game_statistics
         with sqlite3.connect(self.db_path) as conn:
             query = """
-                SELECT
-                    gs.fen,
-                    gs.move,
-                    gs.turn,
-                    gst.white_elo,
-                    gst.black_elo,
-                    gst.result
-                FROM game_snapshots gs
-                JOIN game_statistics gst ON gs.raw_game_id = gst.raw_game_id
-                WHERE gs.id=?
-            """
+                    SELECT gs.fen,
+                           gs.move,
+                           gs.turn,
+                           gst.white_elo,
+                           gst.black_elo,
+                           gst.result
+                    FROM game_snapshots gs
+                             JOIN game_statistics gst ON gs.raw_game_id = gst.raw_game_id
+                    WHERE gs.id = ? \
+                    """
             cur = conn.cursor()
             row = cur.execute(query, (idx,)).fetchone()
             if row is None:
