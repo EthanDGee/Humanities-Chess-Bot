@@ -9,6 +9,7 @@ import torch
 from torch.utils.data import Dataset
 
 from packages.train.src.constants import DB_FILE
+from packages.train.src.dataset.loaders.legal_moves import LegalMovesDataset
 from packages.train.src.dataset.repositories.game_snapshots import count_snapshots
 
 
@@ -64,6 +65,8 @@ class GameSnapshotsDataset(Dataset):
         self.num_indexes = num_indexes
 
         self.db_path = str(db_path) if db_path else DB_FILE
+
+        self.legal_moves = LegalMovesDataset()
 
     def _fen_to_tensor(self, fen: str) -> torch.Tensor:
         """Convert FEN string to tensor representation.
@@ -173,18 +176,7 @@ class GameSnapshotsDataset(Dataset):
             # Parse SAN move to get UCI move
             move = board.parse_san(move_san)
 
-            # get the rows and columns for the start and end positions
-            start_col = move.from_square % 8
-            start_row = move.from_square // 8
-
-            end_col = move.to_square % 8
-            end_row = move.to_square // 8
-
-            # encode the values by using base 8 numering giving each id a digit place (stored in base 10)
-            move_index = start_col
-            move_index += 8 * start_row
-            move_index += 8**2 * end_col
-            move_index += 8**3 * end_row
+            move_index = self.legal_moves.get_index_from_move(move)
 
             promotion_idx = self.PROMOTION_PIECES.get(move.promotion, 0)
 
