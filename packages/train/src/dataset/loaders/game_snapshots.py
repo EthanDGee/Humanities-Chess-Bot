@@ -159,7 +159,7 @@ class GameSnapshotsDataset(Dataset):
 
         return torch.tensor([white_z_norm, black_z_norm], dtype=torch.float32)
 
-    def _encode_move(self, fen: str, move_san: str) -> tuple[int, int]:
+    def _encode_move(self, fen: str, move_san: str) -> int:
         """Encode move as indexes of start and end positions and promotion index.
 
         Args:
@@ -167,9 +167,7 @@ class GameSnapshotsDataset(Dataset):
             move_san: Move in SAN notation
 
         Returns:
-            Tuple of (from_square, to_square, promotion) tensors
-            - move: int index stores both start and end positions
-            - promotion: int one-hot tensor for [none, N, B, R, Q]
+            - move: int index of move in legal_moves dataset
         """
         try:
             board = chess.Board(fen)
@@ -177,13 +175,12 @@ class GameSnapshotsDataset(Dataset):
             # Parse SAN move to get UCI move to determine promotion
             move = board.parse_san(move_san)
             move_index = self.legal_moves.get_index_from_move(board.uci(move))
-            promotion_idx = self.PROMOTION_PIECES.get(move.promotion, 0)
 
-            return move_index, promotion_idx
+            return move_index
 
         except (ValueError, AssertionError):
             # If move parsing fails, return zeros
-            return 0, 0
+            return 0
 
     def __len__(self) -> int:
         """Return the number of samples in the dataset."""
@@ -231,8 +228,7 @@ class GameSnapshotsDataset(Dataset):
         # Encode all features
 
         # _encode_move
-        chosen_move, promo = self._encode_move(data["fen"], data["move"])
-        print(chosen_move, promo)
+        chosen_move = self._encode_move(data["fen"], data["move"])
         turn = self._encode_turn(data["turn"])
 
         # elos
@@ -244,4 +240,4 @@ class GameSnapshotsDataset(Dataset):
         # combine to 1d tensor
         labels = torch.cat((elos, turn, board), 0)
 
-        return labels, (chosen_move, promo)
+        return labels, chosen_move
