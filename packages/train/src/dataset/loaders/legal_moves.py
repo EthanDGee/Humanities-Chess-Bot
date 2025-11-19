@@ -10,22 +10,20 @@ from packages.train.src.constants import DB_FILE
 
 
 class LegalMovesDataset:
-    """PyTorch Dataset for legal chess moves.
+    """
+    Represents a dataset of legal chess moves.
 
-    Loads legal moves and their associated piece types from the database.
-    Each sample represents a unique legal move with its piece type encoding.
+    This class is designed to handle the loading, processing, and encoding of chess moves
+    using the Universal Chess Interface (UCI) notation. It supports transformation of moves
+    to tensor representations for machine learning tasks and manages a structured vocabulary
+    for indexing the moves. The dataset can either build its own vocabulary based on stored
+    data or leverage a provided vocabulary for flexible use.
 
-    Args:
-        db_path: Path to SQLite database (defaults to DB_FILE from constants)
-        transform: Optional transform to apply to move encodings
-        vocab: Optional move vocabulary for encoding. If None, builds from data.
-
-    Returns:
-        Dictionary with keys:
-            - move: Move string in UCI notation (e.g., 'e2e4', 'e7e8q')
-            - move_encoding: Tensor encoding of the move
-            - piece_types: List of piece types that can make this move
-            - piece_encoding: One-hot tensor of piece types (size 6: pawn, knight, bishop, rook, queen, king)
+    Attributes:
+        PIECE_NAMES: List of valid chess piece names.
+        PIECE_TO_IDX: Mapping of piece names to their respective indices.
+        FILES: String representing valid file names in chess notation.
+        RANKS: String representing valid rank names in chess notation.
     """
 
     PIECE_NAMES = ["pawn", "knight", "bishop", "rook", "queen", "king"]
